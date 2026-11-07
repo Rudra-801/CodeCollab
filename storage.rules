@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+ match /b/{bucket}/o {
+  match /avatars/{uid}/profile {
+   allow read: if request.auth != null && request.auth.uid == uid;
+   allow write: if request.auth != null && request.auth.uid == uid && request.resource.size <= 2097152 && request.resource.contentType.matches('image/(png|jpeg|webp)');
+  }
+  match /projects/{id}/assets/{file} {
+   function membership() { return firestore.get(/databases/(default)/documents/projects/$(id)/members/$(request.auth.uid)); }
+   allow read: if request.auth != null && membership().data.role in ['owner','admin','editor','viewer'];
+   allow create: if request.auth != null && membership().data.role in ['owner','admin','editor'] && request.resource.size <= 10485760 && !firestore.get(/databases/(default)/documents/projects/$(id)).data.archived;
+  }
+ }
+}

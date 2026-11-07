@@ -1,0 +1,17 @@
+{
+  "name": "codecollab",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm run dev --prefix client",
+    "dev": "npm run dev --prefix client",
+    "legacy": "node server.js",
+    "build": "npm run build --prefix client",
+    "test": "node --test tests/*.test.js",
+    "test:security": "node client/tests/security.mjs",
+    "test:browser": "node client/tests/workspace.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

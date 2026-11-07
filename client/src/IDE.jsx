@@ -1,0 +1,334 @@
+import { connectPresence } from "./presence";
+import React, { useEffect, useRef, useState } from "react";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
+import Worker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import "monaco-editor/esm/vs/editor/contrib/quickAccess/browser/commandsQuickAccess";
+import "monaco-editor/esm/vs/editor/standalone/browser/quickAccess/standaloneCommandsQuickAccess";
+import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution";
+import "monaco-editor/esm/vs/basic-languages/python/python.contribution";
+import "monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution";
+import * as Y from "yjs";
+import { MonacoBinding } from "y-monaco";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  Bytes,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db, command } from "./firebase";
+import { useRows } from "./Dashboard";
+globalThis.MonacoEnvironment = { getWorker: () => new Worker() };
+function Editor({ path, uid, name, writable, prefs }) {
+  const container = useRef(),
+    editor = useRef(),
+    [status, S] = useState("Connecting"),
+    [cursor, C] = useState("1:1"),
+    [peers, P] = useState([]);
+  const language =
+    { js: "javascript", jsx: "javascript", ts: "typescript", py: "python" }[
+      name.split(".").pop()
+    ] || "plaintext";
+  useEffect(() => {
+    let alive = true,
+      queued = [],
+      timer,
+      ready = false;
+    const ydoc = new Y.Doc(),
+      model = monaco.editor.createModel("", language);
+    const instance = monaco.editor.create(container.current, {
+      model,
+      automaticLayout: true,
+      readOnly: true,
+      theme: prefs.theme,
+      minimap: { enabled: prefs.minimap },
+      fontSize: 14,
+    });
+    editor.current = { instance, model, ready: false };
+    const presence = connectPresence(ydoc, path, P);
+    const binding = new MonacoBinding(
+      ydoc.getText("content"),
+      model,
+      new Set([instance]),
+      presence.awareness,
+    );
+    const changes = collection(db, path + "/updates");
+    function flush() {
+      clearTimeout(timer);
+      if (!queued.length) return;
+      const bytes = Y.mergeUpdates(queued);
+      queued = [];
+      addDoc(changes, {
+        uid,
+        bytes: Bytes.fromUint8Array(bytes),
+        createdAt: serverTimestamp(),
+      }).then(
+        () => {
+          if (alive) S("Saved");
+        },
+        (e) => {
+          if (alive) {
+            S("Save failed: " + e.message);
+            instance.updateOptions({ readOnly: true });
+          }
+        },
+      );
+    }
+    ydoc.on("update", (u, origin) => {
+      if (origin === "remote") return;
+      queued.push(u);
+      S("Saving…");
+      clearTimeout(timer);
+      timer = setTimeout(flush, 200);
+    });
+    const unsub = onSnapshot(
+      changes,
+      { includeMetadataChanges: true },
+      (snap) => {
+        for (const change of snap.docChanges()) {
+          if (change.type === "added")
+            Y.applyUpdate(
+              ydoc,
+              change.doc.data().bytes.toUint8Array(),
+              "remote",
+            );
+        }
+        if (!ready && !snap.metadata.fromCache) {
+          ready = true;
+          editor.current.ready = true;
+          instance.updateOptions({ readOnly: !writable });
+        }
+        if (!queued.length)
+          S(
+            snap.metadata.fromCache
+              ? "Offline"
+              : snap.metadata.hasPendingWrites
+                ? "Saving…"
+                : "Synced",
+          );
+      },
+      (e) => {
+        instance.updateOptions({ readOnly: true });
+        S(e.message);
+      },
+    );
+    const position = instance.onDidChangeCursorPosition((e) =>
+      C(e.position.lineNumber + ":" + e.position.column),
+    );
+    instance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, flush);
+    return () => {
+      alive = false;
+      flush();
+      unsub();
+      position.dispose();
+      binding.destroy();
+      presence.close();
+      instance.dispose();
+      model.dispose();
+      ydoc.destroy();
+      editor.current = null;
+    };
+  }, [path, uid, writable]);
+  useEffect(() => {
+    if (editor.current) {
+      monaco.editor.setModelLanguage(editor.current.model, language);
+      editor.current.instance.updateOptions({
+        minimap: { enabled: prefs.minimap },
+      });
+      monaco.editor.setTheme(prefs.theme);
+    }
+  }, [language, prefs]);
+  return (
+    <div>
+      <div ref={container} className="editor" />
+      <small role="status">
+        {language}　 Ln:Col {cursor}　 UTF-8　 {status}
+      </small>
+      {peers.length > 0 && <small> · Online: {peers.join(`, `)}</small>}
+    </div>
+  );
+}
+export default function IDE({ project, user, writable, prefs }) {
+  const base = "projects/" + project,
+    [active, A] = useState(""),
+    [error, E] = useState(""),
+    [count, L] = useState(30),
+    [search, Q] = useState(""),
+    [tabs, T] = useState([]);
+  const files = useRows(base + "/files"),
+    chat = useRows(base + "/messages", "createdAt", count);
+  const file = files.rows?.find((f) => f.id === active) || files.rows?.[0];
+  useEffect(() => {
+    if (file) T((t) => (t.includes(file.id) ? t : [...t, file.id]));
+  }, [file?.id]);
+  async function run(fn) {
+    try {
+      E("");
+      await fn();
+    } catch (e) {
+      E(e.message);
+    }
+  }
+  return (
+    <section className="ide">
+      <aside>
+        <small>EXPLORER</small>
+        <input
+          aria-label="Filter files"
+          value={search}
+          placeholder="Find file…"
+          onChange={(e) => Q(e.target.value)}
+        />
+        {files.rows
+          ?.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
+          .map((f) => (
+            <button
+              key={f.id}
+              aria-pressed={file?.id === f.id}
+              onClick={() => A(f.id)}
+            >
+              {f.name}
+            </button>
+          ))}
+        {writable && (
+          <>
+            <button
+              onClick={() => {
+                const name = prompt("New file path");
+                if (name)
+                  run(async () =>
+                    A(
+                      (
+                        await addDoc(collection(db, base + "/files"), {
+                          name,
+                          createdAt: serverTimestamp(),
+                        })
+                      ).id,
+                    ),
+                  );
+              }}
+            >
+              + File
+            </button>
+            {file && (
+              <button
+                onClick={() => {
+                  const name = prompt("Rename file", file.name);
+                  if (name)
+                    run(() =>
+                      updateDoc(doc(db, base + "/files/" + file.id), { name }),
+                    );
+                }}
+              >
+                Rename file
+              </button>
+            )}
+            {file && (
+              <button
+                onClick={() => {
+                  if (
+                    confirm(
+                      "Delete this file? Create a project snapshot first to keep a recoverable copy.",
+                    )
+                  )
+                    run(() =>
+                      command({
+                        action: "deleteFile",
+                        id: project,
+                        target: file.id,
+                      }),
+                    );
+                }}
+              >
+                Delete file
+              </button>
+            )}
+          </>
+        )}
+      </aside>
+      <div className="canvas">
+        <nav aria-label="Open files">
+          {tabs
+            .map((id) => files.rows?.find((f) => f.id === id))
+            .filter(Boolean)
+            .map((f) => (
+              <button
+                key={f.id}
+                aria-pressed={f.id === file?.id}
+                onClick={() => A(f.id)}
+              >
+                {f.name}
+              </button>
+            ))}
+        </nav>
+        {file ? (
+          <>
+            <small>{file.name}</small>
+            <Editor
+              key={file.id}
+              path={base + "/files/" + file.id}
+              uid={user.uid}
+              name={file.name}
+              prefs={prefs}
+              writable={writable}
+            />
+          </>
+        ) : (
+          <p>No files yet.</p>
+        )}
+      </div>
+      <details className="chat" open>
+        <summary>Project chat</summary>
+        <div className="messages">
+          {[...(chat.rows || [])].reverse().map((m) => (
+            <p key={m.id}>
+              <small>
+                {m.uid === user.uid ? "You" : m.uid} ·{" "}
+                {m.createdAt?.toDate().toLocaleTimeString()}
+              </small>
+              <br />
+              {m.text}
+            </p>
+          ))}
+        </div>
+        {chat.rows?.length === count && (
+          <button onClick={() => L(count + 30)}>Earlier messages</button>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = e.currentTarget,
+              text = form.message.value.trim();
+            if (text)
+              run(async () => {
+                const button = form.querySelector("button");
+                button.disabled = true;
+                try {
+                  await addDoc(collection(db, base + "/messages"), {
+                    text,
+                    uid: user.uid,
+                    createdAt: serverTimestamp(),
+                  });
+                  form.reset();
+                } finally {
+                  button.disabled = false;
+                }
+              });
+          }}
+        >
+          <input
+            aria-label="Chat message"
+            name="message"
+            required
+            maxLength={2000}
+          />
+          <button>Send</button>
+        </form>
+      </details>
+      <p role="alert">{error || files.error || chat.error}</p>
+    </section>
+  );
+}

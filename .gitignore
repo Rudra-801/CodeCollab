@@ -1,0 +1,13 @@
+node_modules/
+**/data/
+.env*
+!.env.example
+*.pem
+*.key
+*service-account*.json
+*firebase-adminsdk*.json
+dist/
+.firebase/
+*-debug.log*
+desktop.ini
+*.zip

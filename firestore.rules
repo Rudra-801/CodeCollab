@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function own(uid) { return request.auth != null && request.auth.uid == uid; }
+  function member(k,id) { return request.auth != null && exists(/databases/$(database)/documents/$(k)/$(id)/members/$(request.auth.uid)); }
+  function edit(p) { return member('projects',p) && get(/databases/$(database)/documents/projects/$(p)/members/$(request.auth.uid)).data.role in ['owner','admin','editor'] && !get(/databases/$(database)/documents/projects/$(p)).data.archived; }
+  match /users/{uid} {
+   allow read: if own(uid);
+   allow create,update: if own(uid) && request.resource.data.keys().hasOnly(['name','minimap','theme','notifications']) && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.minimap is bool && request.resource.data.notifications is bool && request.resource.data.theme in ['vs-dark','hc-black'];
+   match /notifications/{n} { allow update: if own(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true; }
+   match /{kind}/{id} { allow read: if own(uid) && kind in ['projects','teams','notifications']; }
+  }
+  match /{kind}/{id} {
+   allow read: if kind in ['teams','projects'] && member(kind,id);
+   match /{sub}/{entry} { allow read: if kind in ['teams','projects'] && sub in ['members','activity'] && member(kind,id); }
+  }
+  match /projects/{p}/files/{f} {
+   allow read: if member('projects',p);
+   function validName() { return request.resource.data.name is string && request.resource.data.name.size()>0 && request.resource.data.name.size()<=160; }
+   allow create: if edit(p) && !exists(/databases/$(database)/documents/projects/$(p)/deletedFiles/$(f)) && validName() && request.resource.data.keys().hasOnly(['name','createdAt']) && request.resource.data.createdAt==request.time;
+   allow update: if edit(p) && validName() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
+   match /updates/{u} {
+    allow read: if member('projects',p) && exists(/databases/$(database)/documents/projects/$(p)/files/$(f));
+    allow create: if edit(p) && exists(/databases/$(database)/documents/projects/$(p)/files/$(f)) && request.resource.data.keys().hasOnly(['bytes','uid','createdAt']) && own(request.resource.data.uid) && request.resource.data.createdAt==request.time && request.resource.data.bytes is bytes && request.resource.data.bytes.size()<=200000;
+   }
+  }
+  match /projects/{p}/versions/{v} { allow read: if member('projects',p); }
+  match /projects/{p}/messages/{m} {
+   allow read: if member('projects',p);
+   allow create: if member('projects',p) && own(request.resource.data.uid) && request.resource.data.keys().hasOnly(['uid','text','createdAt']) && request.resource.data.createdAt==request.time && request.resource.data.text is string && request.resource.data.text.size()>0 && request.resource.data.text.size()<=2000;
+  }
+ }
+}
+
+
+

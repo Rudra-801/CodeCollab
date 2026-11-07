@@ -1,0 +1,274 @@
+:root {
+  color-scheme: dark;
+  font:
+    15px/1.55 Inter,
+    Geist,
+    system-ui,
+    sans-serif;
+  background: #0a0a0a;
+  color: #f5f7fa;
+  --line: #27313d;
+  --panel: #10151d;
+  --accent: #00c8f8;
+}
+* {
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+body {
+  margin: 0;
+}
+header,
+footer {
+  padding: 18px 5vw;
+  border-bottom: 1px solid var(--line);
+}
+header,
+nav,
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+header {
+  justify-content: space-between;
+}
+header > a {
+  font-weight: 800;
+  font-size: 21px;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent);
+}
+header span,
+b {
+  color: #ff2d95;
+}
+button,
+.button,
+input,
+select {
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px 12px;
+  color: inherit;
+  background: #151d28;
+}
+button,
+.button {
+  cursor: pointer;
+  transition: background 0.18s;
+}
+button:hover,
+button[aria-pressed="true"] {
+  background: #193445;
+}
+button:disabled {
+  opacity: 0.55;
+}
+.button,
+form button {
+  background: var(--accent);
+  color: #071017;
+  font-weight: 650;
+}
+.button {
+  display: inline-block;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.intro,
+.details,
+.content {
+  width: min(1440px, 92%);
+  margin: auto;
+}
+.intro {
+  min-height: 67vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 5vw;
+}
+.intro h1 {
+  font-size: clamp(50px, 6vw, 96px);
+  letter-spacing: -0.07em;
+  line-height: 0.99;
+  margin: 18px 0;
+}
+.intro p,
+.details p {
+  color: #9aa7b8;
+  max-width: 48ch;
+}
+.intro em,
+strong {
+  font-style: normal;
+  color: var(--accent);
+}
+small {
+  color: #9aa7b8;
+  font-family: ui-monospace, monospace;
+}
+.intro article,
+.ide {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  overflow: hidden;
+}
+.intro article {
+  grid-template-columns: auto 1fr;
+  min-height: 250px;
+}
+.intro article > *,
+.ide > aside,
+.chat {
+  padding: 16px;
+}
+.intro aside,
+.ide aside {
+  background: #10151d;
+  border-right: 1px solid var(--line);
+}
+pre {
+  line-height: 2;
+}
+.details {
+  border-top: 1px solid var(--line);
+  padding: 40px 0 64px;
+}
+.account,
+.content {
+  padding: 36px 0;
+}
+.account {
+  width: min(420px, 90vw);
+  margin: auto;
+}
+.account h2,
+.content h1 {
+  font-size: 36px;
+  letter-spacing: -0.04em;
+}
+form,
+label {
+  display: grid;
+  gap: 8px;
+}
+form {
+  gap: 14px;
+  max-width: 460px;
+  margin-bottom: 15px;
+}
+label:has([type="checkbox"]) {
+  display: block;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.item {
+  text-align: left;
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+.toolbar {
+  margin: 20px 0;
+}
+.ide {
+  grid-template-columns: minmax(140px, 17%) minmax(0, 1fr) minmax(190px, 22%);
+}
+.ide aside > * {
+  width: 100%;
+  margin-bottom: 6px;
+}
+.canvas {
+  min-width: 0;
+  padding: 10px;
+}
+.editor {
+  height: 54vh;
+  min-height: 300px;
+}
+.messages {
+  max-height: 38vh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.chat {
+  border-left: 1px solid var(--line);
+}
+.chat input {
+  width: 100%;
+}
+details {
+  margin: 12px 0;
+}
+summary {
+  cursor: pointer;
+}
+code {
+  overflow-wrap: anywhere;
+}
+[role="alert"] {
+  color: #f05a70;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .intro,
+  .ide {
+    grid-template-columns: 1fr;
+  }
+  .intro {
+    padding: 42px 0;
+  }
+  .ide aside {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .ide aside > * {
+    width: auto;
+  }
+  .chat {
+    border-top: 1px solid var(--line);
+  }
+  header {
+    gap: 10px;
+  }
+  nav {
+    gap: 9px;
+  }
+  .intro article {
+    font-size: 12px;
+  }
+  .editor {
+    height: 48vh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+.yRemoteSelection {
+  background: #007ba74d;
+}
+.yRemoteSelectionHead {
+  border-left: 2px solid #ff2d95;
+}

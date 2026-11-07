@@ -1,0 +1,2 @@
+const test=require('node:test'),assert=require('node:assert/strict');const {server}=require('../server');
+test('health and frontend serve',async()=>{await new Promise(r=>server.listen(0,r));try{const base='http://127.0.0.1:'+server.address().port;const health=await (await fetch(base+'/api/health')).json();assert.equal(health.ok,true);const html=await (await fetch(base+'/')).text();assert.match(html,/CodeCollab/);const denied=await fetch(base+'/api/projects');assert.equal(denied.status,401)}finally{await new Promise(r=>server.close(r))}});
