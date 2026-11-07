@@ -50,7 +50,7 @@ exports.workspace = onCall(async (request) => {
         );
       tx.set(db.doc("accountClosures/" + uid), { createdAt: now() });
     });
-    await db.recursiveDelete(profile);
+    await db.doc("githubConnections/"+uid).delete();await db.recursiveDelete(profile);
     await getAuth().revokeRefreshTokens(uid);
     await getAuth().deleteUser(uid);
     return {};
@@ -333,3 +333,5 @@ exports.archiveSnapshot = require("./backups").archiveSnapshot;
 exports.compactUpdates = require("./compaction").compactUpdates;
 exports.runner = require("./runner").runner;
 exports.assistant = require("./assistant").assistant;
+exports.github = require("./github").github;
+

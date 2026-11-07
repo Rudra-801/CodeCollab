@@ -15,6 +15,7 @@ import {
 } from "firebase/auth";
 import { auth, configured } from "./firebase";
 import "./workspace.css";
+const Playground = lazy(() => import("./Playground"));
 const Dashboard = lazy(() => import("./Dashboard"));
 const modes = ["login", "register", "forgot"];
 function Landing() {
@@ -53,7 +54,7 @@ function Landing() {
           <a className="button" href="#register">
             Get Started Free
           </a>{" "}
-          <a href="#demo">View Demo ↓</a>
+          <a href="#playground">Try the playground →</a>
         </section>
         <article id="demo">
           <aside>
@@ -313,6 +314,12 @@ export default function Workspace() {
   }, []);
   if (new URLSearchParams(location.search).has("oobCode"))
     return <Account route={route} />;
+  if (route === "playground")
+    return (
+      <Suspense fallback={<main>Loading playground…</main>}>
+        <Playground />
+      </Suspense>
+    );
   if (user === undefined) return <main>Loading workspace…</main>;
   if (user)
     return (

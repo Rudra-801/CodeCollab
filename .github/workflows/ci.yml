@@ -22,5 +22,6 @@ jobs:
       - run: |
           VITE_EMULATORS=true npm run build
           npm run preview --prefix client -- --host 127.0.0.1 --port 5178 &
-          firebase emulators:exec --project demo-codecollab --only auth,functions,firestore,storage "npm run test:browser"
+          firebase emulators:exec --project demo-codecollab --only auth,functions,firestore,storage "npm run test:browser && node client/tests/playground.mjs"
+
 

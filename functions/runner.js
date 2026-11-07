@@ -17,7 +17,7 @@ const programs = {
 };
 const { authorize, reserve, fail } = require("./toolAccess");
 exports.runner = onCall(
-  { timeoutSeconds: 120, maxInstances: 4, concurrency: 4 },
+  { timeoutSeconds: 120, maxInstances: 4, concurrency: 4, secrets: process.env.CODECOLLAB_ENABLE_RUNNER==="true"?["E2B_API_KEY"]:[] },
   async (req) => {
     const uid = await authorize(req),
       { source, stdin = "", language, job, action } = req.data;
@@ -98,3 +98,4 @@ exports.runner = onCall(
     }
   },
 );
+

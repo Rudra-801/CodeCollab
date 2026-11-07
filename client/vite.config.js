@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 export default defineConfig({
+  worker: { format: "es" },
   resolve: { dedupe: ["yjs", "y-protocols", "lib0", "monaco-editor"] },
   optimizeDeps: {
     include: [

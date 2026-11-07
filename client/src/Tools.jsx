@@ -1,3 +1,6 @@
+import GitPanel from "./GitPanel";
+import HtmlPreview from "./HtmlPreview";
+import BrowserRun from "./BrowserRun";
 import React, { useState } from "react";
 import { invokeTool } from "./firebase";
 const languages = {
@@ -67,7 +70,13 @@ export default function Tools({ editor, path, name }) {
     <details className="worktools">
       <summary>Execution and code assistance</summary>
       <h3>Run {name}</h3>
-      {execution && lang !== "plaintext" ? (
+      {/\.html?$/i.test(name) && <HtmlPreview editor={editor} />}
+      {["javascript", "typescript"].includes(lang) ? (
+        <BrowserRun
+          language={lang}
+          source={() => editor.current.model.getValue()}
+        />
+      ) : execution && lang !== "plaintext" ? (
         <>
           <label>
             Standard input
@@ -108,6 +117,7 @@ export default function Tools({ editor, path, name }) {
             : "Execution provider is unconfigured."}
         </p>
       )}
+      <GitPanel project={project} editor={editor} />
       <h3>Ask about selected code</h3>
       {ai ? (
         <>

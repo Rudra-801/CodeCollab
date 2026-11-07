@@ -81,6 +81,24 @@ try {
     owner.getByRole("heading", { name: "Browser workspace · Restored" }),
   ).toBeVisible();
   await expect(owner.locator(".view-lines")).toContainText("beta");
+  await action(owner, "+ File", "preview.html");
+  await expect(owner.locator(".canvas > small")).toHaveText("preview.html");
+  await expect(owner.locator(".canvas [role=status]")).toContainText("Synced");
+  await owner.locator(".monaco-editor").click();
+  await owner.keyboard.insertText("<h1>Preview test</h1>");
+  await expect(owner.locator(".view-lines")).toContainText(
+    "<h1>Preview test</h1>",
+  );
+  await owner
+    .getByText("Execution and code assistance", { exact: true })
+    .click();
+  await owner.getByRole("button", { name: "Preview HTML" }).click();
+  await expect(
+    owner
+      .frameLocator('iframe[title="Static HTML preview"]')
+      .getByRole("heading", { name: "Preview test" }),
+  ).toBeVisible();
+  await owner.getByRole("button", { name: "Stop preview" }).click();
   for (const [width, height] of [
     [1920, 1080],
     [1440, 900],

@@ -4,6 +4,24 @@ service cloud.firestore {
   function own(uid) { return request.auth != null && request.auth.uid == uid; }
   function member(k,id) { return request.auth != null && exists(/databases/$(database)/documents/$(k)/$(id)/members/$(request.auth.uid)); }
   function edit(p) { return member('projects',p) && get(/databases/$(database)/documents/projects/$(p)/members/$(request.auth.uid)).data.role in ['owner','admin','editor'] && !get(/databases/$(database)/documents/projects/$(p)).data.archived; }
+  function newPersonalProject(id) {
+   let p = /databases/$(database)/documents/projects/$(id);
+   return request.auth != null && !exists(p)
+    && !exists(/databases/$(database)/documents/accountClosures/$(request.auth.uid))
+    && getAfter(p).data.owner == request.auth.uid;
+  }
+  match /projects/{id} {
+   allow create: if newPersonalProject(id)
+    && request.resource.data.keys().hasOnly(['name','owner','archived','createdAt','updatedAt'])
+    && request.resource.data.name is string && request.resource.data.name.size()>0 && request.resource.data.name.size()<=80
+    && request.resource.data.archived==false && request.resource.data.createdAt==request.time && request.resource.data.updatedAt==request.time
+    && getAfter(/databases/$(database)/documents/projects/$(id)/members/$(request.auth.uid)).data.role=='owner'
+    && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/projects/$(id)).data.id==id
+    && getAfter(/databases/$(database)/documents/projects/$(id)/activity/created).data.uid==request.auth.uid;
+   match /members/{uid} { allow create: if own(uid) && newPersonalProject(id) && request.resource.data=={'uid':uid,'role':'owner'}; }
+   match /activity/created { allow create: if newPersonalProject(id) && request.resource.data=={'uid':request.auth.uid,'action':'create','createdAt':request.time}; }
+  }
+  match /users/{uid}/projects/{id} { allow create: if own(uid) && newPersonalProject(id) && request.resource.data=={'id':id,'role':'owner'}; }
   match /users/{uid} {
    allow read: if own(uid);
    allow create,update: if own(uid) && request.resource.data.keys().hasOnly(['name','minimap','theme','notifications']) && request.resource.data.name is string && request.resource.data.name.size() <= 80 && request.resource.data.minimap is bool && request.resource.data.notifications is bool && request.resource.data.theme in ['vs-dark','hc-black'];
@@ -33,6 +51,7 @@ service cloud.firestore {
   }
  }
 }
+
 
 
 

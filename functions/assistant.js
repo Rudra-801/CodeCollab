@@ -3,7 +3,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { randomUUID } = require("node:crypto");
 const { authorize, reserve, fail } = require("./toolAccess");
 exports.assistant = onCall(
-  { timeoutSeconds: 60, maxInstances: 4 },
+  { timeoutSeconds: 60, maxInstances: 4,secrets: process.env.CODECOLLAB_ENABLE_AI==="true"?["GEMINI_API_KEY"]:[] },
   async (req) => {
     const uid = await authorize(req),
       { context, question } = req.data,
@@ -57,3 +57,4 @@ exports.assistant = onCall(
     }
   },
 );
+
