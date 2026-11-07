@@ -331,3 +331,5 @@ exports.notifyMessage = require("./notifications").notifyMessage;
 exports.archiveSnapshot = require("./backups").archiveSnapshot;
 
 exports.compactUpdates = require("./compaction").compactUpdates;
+exports.runner = require("./runner").runner;
+exports.assistant = require("./assistant").assistant;

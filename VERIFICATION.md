@@ -8,3 +8,4 @@
 - Client production dependency audit reported zero findings. Functions and presence each reported six moderate findings and zero high or critical findings.
 - Live OAuth, actual email delivery, deployed Rules, production Storage, Hosting, Cloud Run scaling and load testing remain unverified.
 - Additional emulator checks verified folder rename, rejection of nonempty folder deletion, file tombstones, inherited team-project access and removal. The two-browser run also verified notification delivery.
+- Staging Hosting, live email/password registration and sign-in, and Firestore read denial were verified. Project rename, archive, archived file write denial, restore and deletion passed in the emulator. See STAGING.md for public deployment scope.

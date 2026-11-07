@@ -1,3 +1,4 @@
+import Tools, { languageFor } from "./Tools";
 import Folders from "./Folders";
 import { connectPresence } from "./presence";
 import React, { useEffect, useRef, useState } from "react";
@@ -29,10 +30,7 @@ function Editor({ path, uid, name, writable, prefs }) {
     [status, S] = useState("Connecting"),
     [cursor, C] = useState("1:1"),
     [peers, P] = useState([]);
-  const language =
-    { js: "javascript", jsx: "javascript", ts: "typescript", py: "python" }[
-      name.split(".").pop()
-    ] || "plaintext";
+  const language = languageFor(name);
   useEffect(() => {
     let alive = true,
       queued = [],
@@ -148,6 +146,7 @@ function Editor({ path, uid, name, writable, prefs }) {
       <small role="status">
         {language}　 Ln:Col {cursor}　 UTF-8　 {status}
       </small>
+      <Tools editor={editor} path={path} name={name} />
       {peers.length > 0 && <small> · Online: {peers.join(`, `)}</small>}
     </div>
   );
@@ -343,3 +342,11 @@ export default function IDE({ project, user, writable, prefs }) {
     </section>
   );
 }
+
+import "monaco-editor/esm/vs/basic-languages/java/java.contribution";
+import "monaco-editor/esm/vs/basic-languages/cpp/cpp.contribution";
+import "monaco-editor/esm/vs/basic-languages/csharp/csharp.contribution";
+import "monaco-editor/esm/vs/basic-languages/go/go.contribution";
+import "monaco-editor/esm/vs/basic-languages/rust/rust.contribution";
+import "monaco-editor/esm/vs/basic-languages/php/php.contribution";
+import "monaco-editor/esm/vs/basic-languages/ruby/ruby.contribution";

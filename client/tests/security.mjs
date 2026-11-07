@@ -96,7 +96,7 @@ async function test() {
   );
   await assert.rejects(b.cmd({ action: "transfer", id, target: b.uid }));
   await assert.rejects(action("deleteFolder", { target: folder.id }));
-  await action("snapshot");
+  await action("rename",{name:"Renamed workspace"});assert.equal((await getDoc(doc(a.db,"projects/"+id))).get("name"),"Renamed workspace");await action("archive");await assert.rejects(setDoc(doc(a.db,file),{name:"blocked"},{merge:true}));await action("restore");await action("snapshot");
   const { id: copy } = await action("duplicate");
   assert.equal(
     (await getDoc(doc(a.db, "projects/" + copy))).get("owner"),
@@ -152,7 +152,7 @@ async function test() {
       createdAt: serverTimestamp(),
     }),
   );
-  await sendEmailVerification(a.auth.currentUser);
+  await a.cmd({action:"delete",id:copy});await assert.rejects(getDoc(doc(a.db,"projects/"+copy)));await sendEmailVerification(a.auth.currentUser);
   async function oob(mode) {
     const r = await fetch(
       "http://127.0.0.1:9099/emulator/v1/projects/" + projectId + "/oobCodes",
@@ -183,3 +183,4 @@ test().then(
     process.exit(1);
   },
 );
+

@@ -1,6 +1,6 @@
 # CodeCollab
 
-CodeCollab is a React development workspace with Firebase Authentication, Firestore, Cloud Storage, callable Cloud Functions, Monaco and Yjs. A separate WebSocket service delivers cursor awareness. This release has passed local emulator and browser checks. Production hosting and OAuth have not been verified.
+CodeCollab is a React development workspace with Firebase Authentication, Firestore, Cloud Storage, callable Cloud Functions, Monaco and Yjs. A separate WebSocket service delivers cursor awareness. This release has passed local emulator and browser checks. The staging frontend is live at https://codecollab-rudra.web.app. See STAGING.md for verified services and outstanding backend requirements.
 
 ## Run locally
 
@@ -44,3 +44,4 @@ The root server.js and public directory preserve the independent JSON applicatio
 For migration, make an encrypted offline backup, establish a verified owner-to-Firebase-UID mapping and dry-run a separate import into a nonproduction project. Generate each file’s initial Yjs update once and save a stable ID map for retries. Reconcile member roles, content hashes and counts before cutover. The new code performs no automatic data import. Do not migrate password hashes, sessions or old reset codes.
 
 See SCHEMA.md and CHANGELOG.md for data layout and release scope.
+

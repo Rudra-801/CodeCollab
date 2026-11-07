@@ -34,3 +34,4 @@ if (emulator && app) {
 export const command = async (data) =>
   (await httpsCallable(functions, "workspace")(data)).data;
 
+export const invokeTool=async(name,data)=>(await httpsCallable(functions,name,{timeout:120000})(data)).data;

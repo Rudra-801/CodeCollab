@@ -1,3 +1,4 @@
+import Landscape from "./Landscape";
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import {
   onIdTokenChanged,
@@ -21,7 +22,10 @@ function Landing() {
     <>
       <header>
         <a href="#">
-          CodeCollab<span> ·</span>
+          <span className="brand-symbol" aria-hidden="true">
+            &lt;/&gt;
+          </span>{" "}
+          CodeCollab
         </a>
         <nav>
           <a href="#features">Features</a>
@@ -34,12 +38,13 @@ function Landing() {
         </nav>
       </header>
       <main className="intro">
+        <Landscape />
         <section>
           <small>REAL-TIME DEVELOPMENT</small>
           <h1>
             Code Together.
             <br />
-            <em>Build Faster.</em>
+            Build <em>Faster.</em>
           </h1>
           <p>
             A real-time collaborative coding workspace for developers, students,
@@ -183,7 +188,9 @@ function Account({ route }) {
   }[mode];
   return (
     <main className="account">
-      <a href="/">CodeCollab</a>
+      <a href="/">
+        <span className="brand-symbol">&lt;/&gt;</span> CodeCollab
+      </a>
       <h2>{title}</h2>
       <form
         onSubmit={(e) => {
