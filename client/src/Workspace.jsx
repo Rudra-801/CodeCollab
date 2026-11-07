@@ -1,4 +1,4 @@
-import Landscape from "./Landscape";
+import Landing, { Brand } from "./Landing";
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import {
   onIdTokenChanged,
@@ -15,116 +15,10 @@ import {
 } from "firebase/auth";
 import { auth, configured } from "./firebase";
 import "./workspace.css";
+import "./product.css";
 const Playground = lazy(() => import("./Playground"));
 const Dashboard = lazy(() => import("./Dashboard"));
 const modes = ["login", "register", "forgot"];
-function Landing() {
-  return (
-    <>
-      <header>
-        <a href="#">
-          <span className="brand-symbol" aria-hidden="true">
-            &lt;/&gt;
-          </span>{" "}
-          CodeCollab
-        </a>
-        <nav>
-          <a href="#features">Features</a>
-          <a href="#solutions">Solutions</a>
-          <a href="#docs">Documentation</a>
-          <a href="#login">Login</a>
-          <a className="button" href="#register">
-            Get Started
-          </a>
-        </nav>
-      </header>
-      <main className="intro">
-        <Landscape />
-        <section>
-          <small>REAL-TIME DEVELOPMENT</small>
-          <h1>
-            Code Together.
-            <br />
-            Build <em>Faster.</em>
-          </h1>
-          <p>
-            A real-time collaborative coding workspace for developers, students,
-            and engineering teams.
-          </p>
-          <a className="button" href="#register">
-            Get Started Free
-          </a>{" "}
-          <a href="#playground">Try the playground →</a>
-        </section>
-        <article id="demo">
-          <aside>
-            EXPLORER
-            <br />
-            <br />⌄ workspace
-            <br />　 main.js
-          </aside>
-          <div>
-            <small>main.js · Editor preview</small>
-            <pre>
-              <b>export function</b> collaborate(team) {"{"}
-              <br />　<strong>return</strong> team.map(member =&gt;
-              <br />
-              　　 member.contribute()
-              <br />
-              　);
-              <br />
-              {"}"}
-            </pre>
-          </div>
-        </article>
-      </main>
-      <section className="details" id="features">
-        <h2>One shared workspace</h2>
-        <p>
-          Edit together in Monaco, organize files and keep project discussions
-          beside the code.
-        </p>
-        <div className="featuregrid">
-          <section>
-            <h3>Multi-file editing</h3>
-            <p>
-              Keep files open in tabs, navigate folders and follow your
-              teammates’ selections.
-            </p>
-          </section>
-          <section>
-            <h3>Version history</h3>
-            <p>
-              Capture a project snapshot. Open a recovered version beside your
-              current work.
-            </p>
-          </section>
-          <section>
-            <h3>Secure development</h3>
-            <p>
-              Control who can read, edit and manage each project. Invite links
-              expire after one day.
-            </p>
-          </section>
-        </div>
-        <h2 id="solutions">For teams and classrooms</h2>
-        <p>
-          Invite collaborators as editors or viewers. Owners manage access to
-          their workspace.
-        </p>
-        <h2 id="docs">Getting started</h2>
-        <p>
-          Create an account, create a project, then add a file. Use Invite to
-          share a single-use workspace code.
-        </p>
-        <a className="button" href="#register">
-          Create your workspace
-        </a>
-      </section>
-      <footer>CodeCollab</footer>
-    </>
-  );
-}
 function Account({ route }) {
   const params = new URLSearchParams(location.search),
     code = params.get("oobCode"),
@@ -188,115 +82,136 @@ function Account({ route }) {
     verifyEmail: "Verify your email",
   }[mode];
   return (
-    <main className="account">
-      <a href="/">
-        <span className="brand-symbol">&lt;/&gt;</span> CodeCollab
-      </a>
-      <h2>{title}</h2>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const { email, password, confirmation } = Object.fromEntries(
-            new FormData(e.currentTarget),
-          );
-          run(async () => {
-            if (mode === "forgot") {
-              try {
-                await sendPasswordResetEmail(auth, email);
-              } catch (e) {
-                if (e.code !== "auth/user-not-found") throw e;
-              }
-              I(
-                "If the address is registered, a reset link will arrive by email.",
-              );
-              U(Date.now() + 60000);
-            } else if (mode === "resetPassword") {
-              if (password !== confirmation)
-                throw Error("Passwords must match.");
-              await confirmPasswordReset(auth, code, password);
-              location.replace("/#login");
-            } else if (mode === "register") {
-              const credential = await createUserWithEmailAndPassword(
-                auth,
-                email,
-                password,
-              );
-              await sendEmailVerification(credential.user);
-            } else await signInWithEmailAndPassword(auth, email, password);
-          });
-        }}
-      >
-        {modes.includes(mode) && (
-          <label>
-            Email
-            <input required type="email" name="email" autoComplete="email" />
-          </label>
-        )}
-        {["register", "login", "resetPassword"].includes(mode) && (
-          <>
-            <label>
-              Password
-              <input
-                required
-                name="password"
-                type={show ? "text" : "password"}
-                minLength={mode === "login" ? 1 : 8}
-                autoComplete={
-                  mode === "login" ? "current-password" : "new-password"
-                }
-              />
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={show}
-                onChange={(e) => S(e.target.checked)}
-              />{" "}
-              Show password
-            </label>
-          </>
-        )}
-        {mode === "resetPassword" && (
-          <label>
-            Confirm password
-            <input
-              required
-              type={show ? "text" : "password"}
-              name="confirmation"
-            />
-          </label>
-        )}
-        {["register", "resetPassword"].includes(mode) && (
-          <small>Use at least eight characters and a unique passphrase.</small>
-        )}
-        {mode !== "verifyEmail" && (
-          <button disabled={busy || !ready || !!until}>
-            {busy
-              ? "Working…"
-              : mode === "forgot"
-                ? "Send reset link"
-                : "Continue"}
+    <div className="auth-stage">
+      <main className="account">
+        <a href="/">
+          <Brand />
+        </a>
+        <h2>{title}</h2>
+        <p className="auth-desc">
+          {
+            {
+              login: "Sign in to your collaborative workspace.",
+              register: "Create your CodeCollab workspace account.",
+              forgot: "Request a secure password-reset link.",
+              resetPassword: "Choose a new password for your account.",
+              verifyEmail: "Confirm your account email address.",
+            }[mode]
+          }
+        </p>{" "}
+        {["login", "register"].includes(mode) && (
+          <button
+            disabled={busy}
+            onClick={() =>
+              run(() => signInWithPopup(auth, new GoogleAuthProvider()))
+            }
+          >
+            <span className="google-letter" aria-hidden="true">
+              G
+            </span>{" "}
+            Continue with Google
           </button>
         )}
-      </form>
-      {modes.includes(mode) && (
-        <button
-          disabled={busy}
-          onClick={() =>
-            run(() => signInWithPopup(auth, new GoogleAuthProvider()))
-          }
+        {["login", "register"].includes(mode) && (
+          <div className="or-line">or</div>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const { email, password, confirmation } = Object.fromEntries(
+              new FormData(e.currentTarget),
+            );
+            run(async () => {
+              if (mode === "forgot") {
+                try {
+                  await sendPasswordResetEmail(auth, email);
+                } catch (e) {
+                  if (e.code !== "auth/user-not-found") throw e;
+                }
+                I(
+                  "If the address is registered, a reset link will arrive by email.",
+                );
+                U(Date.now() + 60000);
+              } else if (mode === "resetPassword") {
+                if (password !== confirmation)
+                  throw Error("Passwords must match.");
+                await confirmPasswordReset(auth, code, password);
+                location.replace("/#login");
+              } else if (mode === "register") {
+                const credential = await createUserWithEmailAndPassword(
+                  auth,
+                  email,
+                  password,
+                );
+                await sendEmailVerification(credential.user);
+              } else await signInWithEmailAndPassword(auth, email, password);
+            });
+          }}
         >
-          Continue with Google
-        </button>
-      )}
-      <p role="alert">{error}</p>
-      <p role="status">{info}</p>
-      <nav>
-        <a href={code ? "/#login" : location.search + "#login"}>Login</a>
-        <a href={location.search + "#register"}>Register</a>
-        <a href="/#forgot">Forgot password?</a>
-      </nav>
-    </main>
+          {modes.includes(mode) && (
+            <label>
+              Email
+              <input required type="email" name="email" autoComplete="email" />
+            </label>
+          )}
+          {["register", "login", "resetPassword"].includes(mode) && (
+            <>
+              <label>
+                Password
+                <input
+                  required
+                  name="password"
+                  type={show ? "text" : "password"}
+                  minLength={mode === "login" ? 1 : 8}
+                  autoComplete={
+                    mode === "login" ? "current-password" : "new-password"
+                  }
+                />
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={show}
+                  onChange={(e) => S(e.target.checked)}
+                />{" "}
+                Show password
+              </label>
+            </>
+          )}
+          {mode === "resetPassword" && (
+            <label>
+              Confirm password
+              <input
+                required
+                type={show ? "text" : "password"}
+                name="confirmation"
+              />
+            </label>
+          )}
+          {["register", "resetPassword"].includes(mode) && (
+            <small>
+              Use at least eight characters and a unique passphrase.
+            </small>
+          )}
+          {mode !== "verifyEmail" && (
+            <button disabled={busy || !ready || !!until}>
+              {busy
+                ? "Working…"
+                : mode === "forgot"
+                  ? "Send reset link"
+                  : "Continue"}
+            </button>
+          )}
+        </form>
+        <p role="alert">{error}</p>
+        <p role="status">{info}</p>
+        <nav>
+          <a href={code ? "/#login" : location.search + "#login"}>Login</a>
+          <a href={location.search + "#register"}>Register</a>
+          <a href="/#forgot">Forgot password?</a>
+        </nav>
+      </main>
+    </div>
   );
 }
 export default function Workspace() {

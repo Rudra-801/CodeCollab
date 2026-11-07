@@ -1,3 +1,4 @@
+import { Files, Search, MessageSquare } from "lucide-react";
 import Tools, { languageFor } from "./Tools";
 import Folders from "./Folders";
 import { connectPresence } from "./presence";
@@ -175,6 +176,40 @@ export default function IDE({ project, user, writable, prefs }) {
   }
   return (
     <section className="ide">
+      <nav className="activity-rail" aria-label="Editor navigation">
+        <button
+          aria-label="Focus file explorer"
+          onClick={(e) =>
+            e.currentTarget
+              .closest(".ide")
+              .querySelector("aside button")
+              ?.focus()
+          }
+        >
+          <Files />
+        </button>
+        <button
+          aria-label="Search project files"
+          onClick={(e) =>
+            e.currentTarget
+              .closest(".ide")
+              .querySelector('[aria-label="Filter files"]')
+              .focus()
+          }
+        >
+          <Search />
+        </button>
+        <button
+          aria-label="Open project chat"
+          onClick={(e) => {
+            const chat = e.currentTarget.closest(".ide").querySelector(".chat");
+            chat.open = true;
+            chat.querySelector("input").focus();
+          }}
+        >
+          <MessageSquare />
+        </button>
+      </nav>
       <aside>
         <small>EXPLORER</small>
         <Folders

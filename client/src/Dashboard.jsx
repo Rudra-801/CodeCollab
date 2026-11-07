@@ -1,3 +1,14 @@
+import { Brand } from "./Landing";
+import CreateWorkspace from "./CreateWorkspace";
+import {
+  LayoutDashboard,
+  FolderCode,
+  Users,
+  Bell,
+  Settings,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
 import Assets from "./Assets";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
@@ -50,7 +61,12 @@ function Item({ path, role, open, search }) {
   );
   return row && row.name.toLowerCase().includes(search.toLowerCase()) ? (
     <button className="item" onClick={open}>
-      <strong>{row.name}</strong>
+      <strong>
+        <FolderCode size={16} /> {row.name}
+      </strong>
+      {row.updatedAt?.toDate && (
+        <time>{row.updatedAt.toDate().toLocaleDateString()}</time>
+      )}
       <small>
         {role} · {row.archived ? "Archived" : "Active"}
       </small>
@@ -126,474 +142,544 @@ export default function Dashboard({ user, logout }) {
   );
   const role = members.rows?.find((m) => m.uid === user.uid)?.role,
     admin = ["owner", "admin"].includes(role);
+  const [creating, setCreating] = useState(false);
+  function navigate(next, collection) {
+    P("");
+    T(next);
+    if (collection) K(collection);
+  }
   return (
-    <>
-      <header>
-        <a
-          href="#"
-          onClick={() => {
-            P("");
-            T("work");
-          }}
-        >
-          CodeCollab<span> ·</span>
+    <div className={"app-layout" + (id && tab === "work" ? " editing" : "")}>
+      <aside className="app-nav">
+        <a href="#" onClick={() => navigate("work", "projects")}>
+          <Brand />
         </a>
+        <small>Workspace</small>
         <nav>
-          <button
-            onClick={() => {
-              P("");
-              T("work");
-            }}
-          >
-            Dashboard
-          </button>
-          <button onClick={() => T("notifications")}>
-            Notifications (
-            {notifications.rows?.filter((n) => !n.read).length || 0})
-          </button>
-          <button onClick={() => T("settings")}>Settings</button>
-          <button onClick={() => run(logout)}>Log out</button>
-        </nav>
-      </header>
-      <div role="alert">
-        {notice || index.error || members.error || activity.error}
-      </div>
-      {tab === "notifications" ? (
-        <main className="content">
-          <h1>Notifications</h1>
-          {notifications.rows?.length ? (
-            notifications.rows.map((n) => (
-              <p key={n.id}>
-                <button
-                  onClick={() =>
-                    run(async () => {
-                      await updateDoc(
-                        doc(db, "users/" + user.uid + "/notifications/" + n.id),
-                        { read: true },
-                      );
-                      K("projects");
-                      P(n.project);
-                      T("work");
-                    })
-                  }
-                >
-                  {n.read ? "Read" : "Unread"} · Project message ·{" "}
-                  {n.createdAt?.toDate().toLocaleString()}
-                </button>
-              </p>
-            ))
-          ) : (
-            <p>No notifications yet.</p>
-          )}
-        </main>
-      ) : tab === "settings" ? (
-        <main className="content">
-          <h1>Settings</h1>
-          <Assets uid={user.uid} />
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              run(async () => {
-                await setDoc(doc(db, "users", user.uid), prefs);
-                N("Preferences saved.");
-              });
-            }}
-          >
-            <label>
-              Display name
-              <input
-                value={prefs.name}
-                maxLength={80}
-                onChange={(e) => F({ ...prefs, name: e.target.value })}
-              />
-            </label>
-            <label>
-              Editor theme
-              <select
-                value={prefs.theme}
-                onChange={(e) => F({ ...prefs, theme: e.target.value })}
-              >
-                <option>vs-dark</option>
-                <option>hc-black</option>
-              </select>
-            </label>
-            {["minimap", "notifications"].map((k) => (
-              <label key={k}>
-                <input
-                  type="checkbox"
-                  checked={prefs[k]}
-                  onChange={(e) => F({ ...prefs, [k]: e.target.checked })}
-                />
-                {k}
-              </label>
-            ))}
-            <button>Save preferences</button>
-          </form>
-          <p>{user.email}</p>
-          {!user.emailVerified && (
+          {[
+            [LayoutDashboard, "Dashboard", () => navigate("work", "projects")],
+            [FolderCode, "Projects", () => navigate("work", "projects")],
+            [Users, "Teams", () => navigate("work", "teams")],
+            [Bell, "Notifications", () => T("notifications")],
+            [Settings, "Settings", () => T("settings")],
+          ].map(([Icon, label, go]) => (
             <button
-              onClick={() =>
-                run(async () => {
-                  await sendEmailVerification(user);
-                  N("Verification email sent.");
-                })
+              key={label}
+              aria-current={
+                (label === "Dashboard" &&
+                  tab === "work" &&
+                  kind === "projects" &&
+                  !id) ||
+                (label === "Teams" && tab === "work" && kind === "teams") ||
+                label.toLowerCase() === tab
+                  ? "page"
+                  : undefined
               }
+              onClick={go}
             >
-              Send verification email
+              <Icon size={17} />
+              {label}
+              {label === "Notifications" && (
+                <span>
+                  ({notifications.rows?.filter((n) => !n.read).length || 0})
+                </span>
+              )}
             </button>
-          )}
-          <button
-            onClick={() =>
-              run(async () => {
-                await sendPasswordResetEmail(auth, user.email);
-                N("Password reset requested.");
-              })
-            }
-          >
-            Reset password
+          ))}
+        </nav>
+        <div className="app-profile">
+          <b>{(prefs.name || user.email || "U")[0].toUpperCase()}</b>
+          <span>{prefs.name || user.email?.split("@")[0]}</span>
+          <button aria-label="Log out" onClick={() => run(logout)}>
+            <LogOut size={16} />
           </button>
-          <p>
-            Sign-in providers ·{" "}
-            {user.providerData.map((p) => p.providerId).join(", ")}
-          </p>
-          <button
-            onClick={() => {
-              if (confirm("Permanently delete your account and preferences?"))
-                run(async () => {
-                  await command({ action: "deleteAccount" });
-                  await logout();
-                });
+        </div>
+      </aside>
+      <div className="work-area">
+        <div className="crumb">
+          <span>Workspace</span>
+          <ChevronRight size={13} />
+          {tab === "work" ? kind : tab}
+          {id && resource && tab === "work" && <> / {resource.name}</>}
+        </div>
+        {creating && (
+          <CreateWorkspace
+            kind={kind}
+            close={() => setCreating(false)}
+            create={async (name) => {
+              const r = await act("create", { name });
+              P(r.id);
             }}
-          >
-            Delete account
-          </button>
-        </main>
-      ) : !id ? (
-        <main className="content">
-          <small>WORKSPACE</small>
-          <h1>
-            Welcome,{" "}
-            {prefs.name || user.displayName || user.email?.split("@")[0]}
-          </h1>
-          <nav>
-            {["projects", "teams"].map((k) => (
-              <button aria-pressed={k === kind} key={k} onClick={() => K(k)}>
-                {k}
-              </button>
-            ))}
-          </nav>
-          <section className="toolbar">
-            <select
-              aria-label="Workspace filter"
-              value={filter}
-              onChange={(e) => H(e.target.value)}
+          />
+        )}
+        <div role="alert">
+          {notice || index.error || members.error || activity.error}
+        </div>
+        {tab === "notifications" ? (
+          <main className="content">
+            <h1>Notifications</h1>
+            {notifications.rows?.length ? (
+              notifications.rows.map((n) => (
+                <p key={n.id}>
+                  <button
+                    onClick={() =>
+                      run(async () => {
+                        await updateDoc(
+                          doc(
+                            db,
+                            "users/" + user.uid + "/notifications/" + n.id,
+                          ),
+                          { read: true },
+                        );
+                        K("projects");
+                        P(n.project);
+                        T("work");
+                      })
+                    }
+                  >
+                    {n.read ? "Read" : "Unread"} · Project message ·{" "}
+                    {n.createdAt?.toDate().toLocaleString()}
+                  </button>
+                </p>
+              ))
+            ) : (
+              <p>No notifications yet.</p>
+            )}
+          </main>
+        ) : tab === "settings" ? (
+          <main className="content">
+            <h1>Settings</h1>
+            <Assets uid={user.uid} />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                run(async () => {
+                  await setDoc(doc(db, "users", user.uid), prefs);
+                  N("Preferences saved.");
+                });
+              }}
             >
-              <option value="all">All workspaces</option>
-              <option value="mine">My workspaces</option>
-              <option value="shared">Shared with me</option>
-            </select>
-            {inviteToken && (
+              <label>
+                Display name
+                <input
+                  value={prefs.name}
+                  maxLength={80}
+                  onChange={(e) => F({ ...prefs, name: e.target.value })}
+                />
+              </label>
+              <label>
+                Editor theme
+                <select
+                  value={prefs.theme}
+                  onChange={(e) => F({ ...prefs, theme: e.target.value })}
+                >
+                  <option>vs-dark</option>
+                  <option>hc-black</option>
+                </select>
+              </label>
+              {["minimap", "notifications"].map((k) => (
+                <label key={k}>
+                  <input
+                    type="checkbox"
+                    checked={prefs[k]}
+                    onChange={(e) => F({ ...prefs, [k]: e.target.checked })}
+                  />
+                  {k}
+                </label>
+              ))}
+              <button>Save preferences</button>
+            </form>
+            <p>{user.email}</p>
+            {!user.emailVerified && (
               <button
                 onClick={() =>
                   run(async () => {
-                    const r = await act("join", { code: inviteToken });
-                    I("");
-                    history.replaceState(null, "", location.pathname);
-                    K(r.kind);
-                    P(r.id);
+                    await sendEmailVerification(user);
+                    N("Verification email sent.");
                   })
                 }
               >
-                Accept invitation
+                Send verification email
               </button>
             )}
-            <input
-              aria-label="Search by name"
-              placeholder={"Search " + kind}
-              value={search}
-              onChange={(e) => Q(e.target.value)}
-            />
+            <button
+              onClick={() =>
+                run(async () => {
+                  await sendPasswordResetEmail(auth, user.email);
+                  N("Password reset requested.");
+                })
+              }
+            >
+              Reset password
+            </button>
+            <p>
+              Sign-in providers ·{" "}
+              {user.providerData.map((p) => p.providerId).join(", ")}
+            </p>
             <button
               onClick={() => {
-                const name = prompt("Workspace name");
-                if (name)
+                if (confirm("Permanently delete your account and preferences?"))
                   run(async () => {
-                    const r = await act("create", { name });
-                    P(r.id);
+                    await command({ action: "deleteAccount" });
+                    await logout();
                   });
               }}
             >
-              Create {kind === "teams" ? "team" : "project"}
+              Delete account
             </button>
-            <button
-              onClick={() => {
-                const code = prompt("Single-use invitation code");
-                if (code)
-                  run(async () => {
-                    await act("join", { code: code.trim() });
-                    N("Invitation accepted.");
-                  });
-              }}
-            >
-              Join via invite
-            </button>
-          </section>
-          <div className="grid">
-            {index.rows
-              ?.filter(
-                (row) =>
-                  filter === "all" ||
-                  (filter === "mine"
-                    ? row.role === "owner"
-                    : row.role !== "owner"),
-              )
-              .map((row) => (
-                <Item
-                  key={row.id}
-                  path={kind + "/" + row.id}
-                  role={row.role}
-                  open={() => {
-                    C("");
-                    P(row.id);
-                  }}
-                  search={search}
-                />
-              ))}
-          </div>
-          {!index.rows?.length && <p>No {kind} yet.</p>}
-        </main>
-      ) : (
-        resource && (
+          </main>
+        ) : !id ? (
           <main className="content">
-            <button onClick={() => P("")}>← Workspaces</button>
-            <h2>{resource.name}</h2>
-            {kind === "teams" && (
-              <section>
-                <h3>Team projects</h3>
-                {teamProjects.rows?.map((p) => (
+            <small className="section-kicker">
+              {kind === "teams" ? "TEAM WORKSPACES" : "PROJECT OVERVIEW"}
+            </small>
+            <h1>
+              Welcome,{" "}
+              {prefs.name || user.displayName || user.email?.split("@")[0]}
+            </h1>
+            <nav>
+              {["projects", "teams"].map((k) => (
+                <button aria-pressed={k === kind} key={k} onClick={() => K(k)}>
+                  {k}
+                </button>
+              ))}
+            </nav>
+            <div className="summary-strip">
+              {[
+                [
+                  FolderCode,
+                  "Owned",
+                  index.rows?.filter((r) => r.role === "owner").length,
+                ],
+                [
+                  Users,
+                  "Shared with me",
+                  index.rows?.filter((r) => r.role !== "owner").length,
+                ],
+                [
+                  Bell,
+                  "Unread notifications",
+                  notifications.rows?.filter((n) => !n.read).length,
+                ],
+              ].map(([Icon, label, value]) => (
+                <div key={label}>
+                  <Icon size={18} />
+                  <span>
+                    {value ?? "…"}
+                    <small>{label}</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <section className="toolbar">
+              <select
+                aria-label="Workspace filter"
+                value={filter}
+                onChange={(e) => H(e.target.value)}
+              >
+                <option value="all">All workspaces</option>
+                <option value="mine">My workspaces</option>
+                <option value="shared">Shared with me</option>
+              </select>
+              {inviteToken && (
+                <button
+                  onClick={() =>
+                    run(async () => {
+                      const r = await act("join", { code: inviteToken });
+                      I("");
+                      history.replaceState(null, "", location.pathname);
+                      K(r.kind);
+                      P(r.id);
+                    })
+                  }
+                >
+                  Accept invitation
+                </button>
+              )}
+              <input
+                aria-label="Search by name"
+                placeholder={"Search " + kind}
+                value={search}
+                onChange={(e) => Q(e.target.value)}
+              />
+              <button onClick={() => setCreating(true)} className="primary">
+                Create {kind === "teams" ? "team" : "project"}
+              </button>
+              <button
+                onClick={() => {
+                  const code = prompt("Single-use invitation code");
+                  if (code)
+                    run(async () => {
+                      await act("join", { code: code.trim() });
+                      N("Invitation accepted.");
+                    });
+                }}
+              >
+                Join via invite
+              </button>
+            </section>
+            <div className="list-label">
+              <span>{kind === "teams" ? "Team" : "Project"} name</span>
+              <span>Last modified</span>
+              <span>Access</span>
+            </div>
+            <div className="grid">
+              {index.rows
+                ?.filter(
+                  (row) =>
+                    filter === "all" ||
+                    (filter === "mine"
+                      ? row.role === "owner"
+                      : row.role !== "owner"),
+                )
+                .map((row) => (
                   <Item
-                    key={p.id}
-                    path={"projects/" + p.id}
-                    role={role}
-                    search=""
+                    key={row.id}
+                    path={kind + "/" + row.id}
+                    role={row.role}
                     open={() => {
-                      K("projects");
-                      P(p.id);
+                      C("");
+                      P(row.id);
                     }}
+                    search={search}
                   />
                 ))}
-                {admin && (
+            </div>
+            {!index.rows?.length && <p>No {kind} yet.</p>}
+          </main>
+        ) : (
+          resource && (
+            <main className="content">
+              <button onClick={() => P("")}>← Workspaces</button>
+              <h2>{resource.name}</h2>
+              {kind === "teams" && (
+                <section>
+                  <h3>Team projects</h3>
+                  {teamProjects.rows?.map((p) => (
+                    <Item
+                      key={p.id}
+                      path={"projects/" + p.id}
+                      role={role}
+                      search=""
+                      open={() => {
+                        K("projects");
+                        P(p.id);
+                      }}
+                    />
+                  ))}
+                  {admin && (
+                    <button
+                      onClick={() => {
+                        const name = prompt("Team project name");
+                        if (name)
+                          run(async () => {
+                            const result = await act("createTeamProject", {
+                              name,
+                            });
+                            K("projects");
+                            P(result.id);
+                          });
+                      }}
+                    >
+                      Create team project
+                    </button>
+                  )}
+                </section>
+              )}
+              {kind === "projects" && role && (
+                <Suspense fallback={<p>Loading editor…</p>}>
+                  <IDE
+                    project={id}
+                    user={user}
+                    prefs={prefs}
+                    writable={!resource.archived && role !== "viewer"}
+                  />
+                </Suspense>
+              )}
+              {kind === "projects" && (
+                <Assets
+                  project={id}
+                  writable={role !== "viewer" && !resource.archived}
+                />
+              )}
+              <details>
+                <summary>Members and workspace settings</summary>
+                {role === "owner" && (
                   <button
                     onClick={() => {
-                      const name = prompt("Team project name");
-                      if (name)
+                      if (confirm("Delete this workspace for every member?"))
                         run(async () => {
-                          const result = await act("createTeamProject", {
-                            name,
-                          });
-                          K("projects");
-                          P(result.id);
+                          await act("delete");
+                          P("");
                         });
                     }}
                   >
-                    Create team project
+                    Delete workspace
                   </button>
                 )}
-              </section>
-            )}
-            {kind === "projects" && role && (
-              <Suspense fallback={<p>Loading editor…</p>}>
-                <IDE
-                  project={id}
-                  user={user}
-                  prefs={prefs}
-                  writable={!resource.archived && role !== "viewer"}
-                />
-              </Suspense>
-            )}
-            {kind === "projects" && (
-              <Assets
-                project={id}
-                writable={role !== "viewer" && !resource.archived}
-              />
-            )}
-            <details>
-              <summary>Members and workspace settings</summary>
-              {role === "owner" && (
-                <button
-                  onClick={() => {
-                    if (confirm("Delete this workspace for every member?"))
-                      run(async () => {
-                        await act("delete");
-                        P("");
-                      });
-                  }}
-                >
-                  Delete workspace
-                </button>
-              )}
-              <div className="toolbar">
-                {admin && (
-                  <>
-                    <button
-                      onClick={() => {
-                        const name = prompt("New name", resource.name);
-                        if (name) run(() => act("rename", { name }));
-                      }}
-                    >
-                      Rename
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("Change archive status?"))
-                          run(() =>
-                            act(resource.archived ? "restore" : "archive"),
-                          );
-                      }}
-                    >
-                      {resource.archived ? "Restore" : "Archive"}
-                    </button>
-                    {["editor", "viewer"].map((role) => (
-                      <button
-                        key={role}
-                        onClick={() =>
-                          run(async () =>
-                            C((await act("invite", { role })).code),
-                          )
-                        }
-                      >
-                        Invite {role}
-                      </button>
-                    ))}
-                  </>
-                )}
-                {code && (
-                  <p>
-                    Invitation code <code>{code}</code>{" "}
-                    <button
-                      onClick={() =>
-                        run(async () => {
-                          await navigator.clipboard.writeText(
-                            location.origin + "/?invite=" + code + "#login",
-                          );
-                          N("Invite link copied.");
-                        })
-                      }
-                    >
-                      Copy invite link
-                    </button>{" "}
-                    <button
-                      onClick={() =>
-                        run(async () => {
-                          await act("revoke", { code });
-                          C("");
-                        })
-                      }
-                    >
-                      Revoke
-                    </button>
-                  </p>
-                )}
-              </div>
-              {members.rows?.map((m) => (
-                <p key={m.id}>
-                  {m.uid} · {m.role}{" "}
-                  {role === "owner" && m.uid !== user.uid && (
+                <div className="toolbar">
+                  {admin && (
                     <>
-                      <select
-                        value={m.role}
-                        onChange={(e) =>
-                          run(() =>
-                            act("role", {
-                              target: m.uid,
-                              role: e.target.value,
-                            }),
-                          )
-                        }
+                      <button
+                        onClick={() => {
+                          const name = prompt("New name", resource.name);
+                          if (name) run(() => act("rename", { name }));
+                        }}
                       >
-                        {["admin", "editor", "viewer"].map((v) => (
-                          <option key={v}>{v}</option>
-                        ))}
-                      </select>
-                      {["transfer", "remove"].map((action) => (
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("Change archive status?"))
+                            run(() =>
+                              act(resource.archived ? "restore" : "archive"),
+                            );
+                        }}
+                      >
+                        {resource.archived ? "Restore" : "Archive"}
+                      </button>
+                      {["editor", "viewer"].map((role) => (
                         <button
-                          key={action}
-                          onClick={() => {
-                            if (confirm(action + " membership?"))
-                              run(() => act(action, { target: m.uid }));
-                          }}
+                          key={role}
+                          onClick={() =>
+                            run(async () =>
+                              C((await act("invite", { role })).code),
+                            )
+                          }
                         >
-                          {action}
+                          Invite {role}
                         </button>
                       ))}
                     </>
                   )}
-                </p>
-              ))}
-              {role && role !== "owner" && (
-                <button
-                  onClick={() => {
-                    if (confirm("Leave this workspace?"))
-                      run(async () => {
-                        await act("leave");
-                        P("");
-                      });
-                  }}
-                >
-                  Leave workspace
-                </button>
-              )}
-            </details>
-            {kind === "projects" && role !== "viewer" && (
-              <details>
-                <summary>Version history</summary>
-                <button onClick={() => run(() => act("snapshot"))}>
-                  Create snapshot
-                </button>
-                <button
-                  onClick={() =>
-                    run(async () => P((await act("duplicate")).id))
-                  }
-                >
-                  Duplicate project
-                </button>
-                {versions.rows?.map((v) => (
-                  <p key={v.id}>
-                    {v.createdAt?.toDate().toLocaleString()} · {v.fileCount}{" "}
-                    files{" "}
-                    <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Restore this version into a new private project?",
+                  {code && (
+                    <p>
+                      Invitation code <code>{code}</code>{" "}
+                      <button
+                        onClick={() =>
+                          run(async () => {
+                            await navigator.clipboard.writeText(
+                              location.origin + "/?invite=" + code + "#login",
+                            );
+                            N("Invite link copied.");
+                          })
+                        }
+                      >
+                        Copy invite link
+                      </button>{" "}
+                      <button
+                        onClick={() =>
+                          run(async () => {
+                            await act("revoke", { code });
+                            C("");
+                          })
+                        }
+                      >
+                        Revoke
+                      </button>
+                    </p>
+                  )}
+                </div>
+                {members.rows?.map((m) => (
+                  <p key={m.id}>
+                    {m.uid} · {m.role}{" "}
+                    {role === "owner" && m.uid !== user.uid && (
+                      <>
+                        <select
+                          value={m.role}
+                          onChange={(e) =>
+                            run(() =>
+                              act("role", {
+                                target: m.uid,
+                                role: e.target.value,
+                              }),
+                            )
+                          }
+                        >
+                          {["admin", "editor", "viewer"].map((v) => (
+                            <option key={v}>{v}</option>
+                          ))}
+                        </select>
+                        {["transfer", "remove"].map((action) => (
+                          <button
+                            key={action}
+                            onClick={() => {
+                              if (confirm(action + " membership?"))
+                                run(() => act(action, { target: m.uid }));
+                            }}
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </p>
+                ))}
+                {role && role !== "owner" && (
+                  <button
+                    onClick={() => {
+                      if (confirm("Leave this workspace?"))
+                        run(async () => {
+                          await act("leave");
+                          P("");
+                        });
+                    }}
+                  >
+                    Leave workspace
+                  </button>
+                )}
+              </details>
+              {kind === "projects" && role !== "viewer" && (
+                <details>
+                  <summary>Version history</summary>
+                  <button onClick={() => run(() => act("snapshot"))}>
+                    Create snapshot
+                  </button>
+                  <button
+                    onClick={() =>
+                      run(async () => P((await act("duplicate")).id))
+                    }
+                  >
+                    Duplicate project
+                  </button>
+                  {versions.rows?.map((v) => (
+                    <p key={v.id}>
+                      {v.createdAt?.toDate().toLocaleString()} · {v.fileCount}{" "}
+                      files{" "}
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              "Restore this version into a new private project?",
+                            )
                           )
-                        )
-                          run(async () =>
-                            P(
-                              (await act("restoreVersion", { target: v.id }))
-                                .id,
-                            ),
-                          );
-                      }}
-                    >
-                      Restore copy
-                    </button>
+                            run(async () =>
+                              P(
+                                (await act("restoreVersion", { target: v.id }))
+                                  .id,
+                              ),
+                            );
+                        }}
+                      >
+                        Restore copy
+                      </button>
+                    </p>
+                  ))}
+                </details>
+              )}
+              <details>
+                <summary>Recent activity</summary>
+                {activity.rows?.map((a) => (
+                  <p key={a.id}>
+                    {a.action} · {a.uid} ·{" "}
+                    {a.createdAt?.toDate().toLocaleString()}
                   </p>
                 ))}
               </details>
-            )}
-            <details>
-              <summary>Recent activity</summary>
-              {activity.rows?.map((a) => (
-                <p key={a.id}>
-                  {a.action} · {a.uid} ·{" "}
-                  {a.createdAt?.toDate().toLocaleString()}
-                </p>
-              ))}
-            </details>
-          </main>
-        )
-      )}
-    </>
+            </main>
+          )
+        )}
+      </div>
+    </div>
   );
 }

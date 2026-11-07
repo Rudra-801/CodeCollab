@@ -45,3 +45,4 @@ For migration, make an encrypted offline backup, establish a verified owner-to-F
 
 See SCHEMA.md and CHANGELOG.md for data layout and release scope.
 
+For the preserved local JSON application, use npm run legacy and open http://localhost:5000/?legacy=1. Its signed-out root directs fresh visitors to the current staging application.

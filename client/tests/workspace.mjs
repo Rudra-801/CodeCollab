@@ -26,7 +26,13 @@ async function action(page, label, reply) {
 try {
   const owner = await register("owner"),
     editor = await register("editor");
-  await action(owner, "Create project", "Browser workspace");
+  await owner
+    .getByRole("button", { name: "Create project", exact: true })
+    .click();
+  await owner.getByLabel("Workspace name").fill("Browser workspace");
+  await owner
+    .getByRole("button", { name: "Create workspace", exact: true })
+    .click();
   await expect(
     owner.getByRole("heading", { name: "Browser workspace" }),
   ).toBeVisible({ timeout: 30000 });
