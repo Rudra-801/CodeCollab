@@ -78,6 +78,29 @@ function Landing() {
           Edit together in Monaco, organize files and keep project discussions
           beside the code.
         </p>
+        <div className="featuregrid">
+          <section>
+            <h3>Multi-file editing</h3>
+            <p>
+              Keep files open in tabs, navigate folders and follow your
+              teammates’ selections.
+            </p>
+          </section>
+          <section>
+            <h3>Version history</h3>
+            <p>
+              Capture a project snapshot. Open a recovered version beside your
+              current work.
+            </p>
+          </section>
+          <section>
+            <h3>Secure development</h3>
+            <p>
+              Control who can read, edit and manage each project. Invite links
+              expire after one day.
+            </p>
+          </section>
+        </div>
         <h2 id="solutions">For teams and classrooms</h2>
         <p>
           Invite collaborators as editors or viewers. Owners manage access to
@@ -261,8 +284,8 @@ function Account({ route }) {
       <p role="alert">{error}</p>
       <p role="status">{info}</p>
       <nav>
-        <a href="/#login">Login</a>
-        <a href="/#register">Register</a>
+        <a href={code ? "/#login" : location.search + "#login"}>Login</a>
+        <a href={location.search + "#register"}>Register</a>
         <a href="/#forgot">Forgot password?</a>
       </nav>
     </main>

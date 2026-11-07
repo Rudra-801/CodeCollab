@@ -67,6 +67,9 @@ try {
   await editor.getByLabel("Chat message").fill("hello team");
   await editor.getByRole("button", { name: "Send", exact: true }).click();
   await expect(owner.locator(".messages")).toContainText("hello team");
+  await expect(
+    owner.getByRole("button", { name: "Notifications (1)" }),
+  ).toBeVisible({ timeout: 15000 });
   await owner.reload();
   await owner.getByRole("button", { name: /Browser workspace/ }).click();
   await expect(owner.locator(".view-lines")).toContainText("alpha");

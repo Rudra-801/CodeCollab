@@ -1,3 +1,4 @@
+import Folders from "./Folders";
 import { connectPresence } from "./presence";
 import React, { useEffect, useRef, useState } from "react";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
@@ -157,7 +158,8 @@ export default function IDE({ project, user, writable, prefs }) {
     [error, E] = useState(""),
     [count, L] = useState(30),
     [search, Q] = useState(""),
-    [tabs, T] = useState([]);
+    [tabs, T] = useState([]),
+    [folder, F] = useState("");
   const files = useRows(base + "/files"),
     chat = useRows(base + "/messages", "createdAt", count);
   const file = files.rows?.find((f) => f.id === active) || files.rows?.[0];
@@ -176,6 +178,13 @@ export default function IDE({ project, user, writable, prefs }) {
     <section className="ide">
       <aside>
         <small>EXPLORER</small>
+        <Folders
+          project={project}
+          current={folder}
+          select={F}
+          writable={writable}
+          onError={E}
+        />
         <input
           aria-label="Filter files"
           value={search}
@@ -183,7 +192,8 @@ export default function IDE({ project, user, writable, prefs }) {
           onChange={(e) => Q(e.target.value)}
         />
         {files.rows
-          ?.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
+          ?.filter((f) => search || (f.parent || "") === folder)
+          .filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
           .map((f) => (
             <button
               key={f.id}
@@ -203,6 +213,7 @@ export default function IDE({ project, user, writable, prefs }) {
                     A(
                       (
                         await addDoc(collection(db, base + "/files"), {
+                          parent: folder,
                           name,
                           createdAt: serverTimestamp(),
                         })

@@ -83,7 +83,28 @@ exports.workspace = onCall(async (request) => {
     const member = (user) => ref.collection("members").doc(user);
     const index = (user) =>
       db.doc("users/" + user + "/" + ref.parent.id + "/" + ref.id);
+    const linked =
+      ref.parent.id === "teams"
+        ? (await tx.get(ref.collection("projects").limit(21))).docs.map(
+            (link) => db.collection("projects").doc(link.id),
+          )
+        : [];
+    function mirror(user, value) {
+      for (const project of linked) {
+        const membership = project.collection("members").doc(user),
+          entry = db.doc("users/" + user + "/projects/" + project.id);
+        if (value) {
+          tx.set(membership, { uid: user, role: value });
+          tx.set(entry, { id: project.id, role: value });
+          if (value === "owner") tx.update(project, { owner: user });
+        } else {
+          tx.delete(membership);
+          tx.delete(entry);
+        }
+      }
+    }
     const grant = (user, value) => {
+      mirror(user, value);
       tx.set(member(user), { uid: user, role: value });
       tx.set(index(user), { id: ref.id, role: value });
     };
@@ -103,7 +124,7 @@ exports.workspace = onCall(async (request) => {
       });
       grant(uid, "owner");
       log();
-      return { id: ref.id };
+      return { id: ref.id, kind: ref.parent.id };
     }
     const [resource, membership] = await Promise.all([
       tx.get(ref),
@@ -115,9 +136,45 @@ exports.workspace = onCall(async (request) => {
       if (!membership.exists) grant(uid, invite.get("role"));
       tx.delete(invite.ref);
       log();
-      return { id: ref.id };
+      return { id: ref.id, kind: ref.parent.id };
     }
+    if (
+      resource.get("teamId") &&
+      ["role", "transfer", "invite", "remove", "leave"].includes(action)
+    )
+      fail("failed-precondition", "Manage membership in the parent team.");
     const authority = membership.get("role");
+    if (action === "createTeamProject") {
+      if (ref.parent.id !== "teams" || !["owner", "admin"].includes(authority))
+        fail("permission-denied", "Team administrator required.");
+      if (!label || label.length > 80 || linked.length >= 20)
+        fail(
+          "invalid-argument",
+          "Use a valid name and up to 20 projects per team.",
+        );
+      const roster = await tx.get(ref.collection("members").limit(201));
+      if (roster.size > 200)
+        fail("resource-exhausted", "Team size exceeds the project limit.");
+      const project = db.collection("projects").doc();
+      tx.create(project, {
+        name: label,
+        owner: resource.get("owner"),
+        teamId: ref.id,
+        archived: false,
+        createdAt: now(),
+        updatedAt: now(),
+      });
+      tx.create(ref.collection("projects").doc(project.id), { id: project.id });
+      for (const m of roster.docs) {
+        tx.create(project.collection("members").doc(m.id), m.data());
+        tx.create(db.doc("users/" + m.id + "/projects/" + project.id), {
+          id: project.id,
+          role: m.get("role"),
+        });
+      }
+      log();
+      return { id: project.id };
+    }
     if (!authority) fail("permission-denied", "Membership required.");
     if (
       kind === "projects" &&
@@ -133,6 +190,53 @@ exports.workspace = onCall(async (request) => {
       });
       log();
       return result;
+    }
+    if (
+      kind === "projects" &&
+      ["createFolder", "renameFolder", "deleteFolder"].includes(action)
+    ) {
+      if (
+        !["owner", "admin", "editor"].includes(authority) ||
+        resource.get("archived")
+      )
+        fail("permission-denied", "Editing access required.");
+      if (target && !key(target)) fail("invalid-argument", "Invalid folder.");
+      if (
+        action !== "deleteFolder" &&
+        (!label || label.length > 100 || label.includes("/"))
+      )
+        fail(
+          "invalid-argument",
+          "Enter a folder name of up to 100 characters.",
+        );
+      const folders = ref.collection("folders"),
+        folder = target ? folders.doc(target) : null;
+      if (folder && !(await tx.get(folder)).exists)
+        fail("not-found", "Folder unavailable.");
+      if (action === "createFolder") {
+        const child = folders.doc();
+        tx.create(child, {
+          parent: target || "",
+          name: label,
+          createdAt: now(),
+        });
+        log();
+        return { id: child.id };
+      }
+      if (!folder) fail("invalid-argument", "Select a folder.");
+      if (action === "renameFolder") tx.update(folder, { name: label });
+      else {
+        const children = await Promise.all(
+          [folders, ref.collection("files")].map((rows) =>
+            tx.get(rows.where("parent", "==", target).limit(1)),
+          ),
+        );
+        if (children.some((s) => !s.empty))
+          fail("failed-precondition", "Empty the folder first.");
+        tx.delete(folder);
+      }
+      log();
+      return {};
     }
     if (action === "deleteFile" && kind === "projects") {
       if (
@@ -152,6 +256,7 @@ exports.workspace = onCall(async (request) => {
       return {};
     }
     if (action === "leave" && authority !== "owner") {
+      mirror(uid, null);
       tx.delete(member(uid));
       tx.delete(index(uid));
       log();
@@ -161,7 +266,16 @@ exports.workspace = onCall(async (request) => {
       fail("permission-denied", "Administrator required.");
     if (action === "delete") {
       if (authority !== "owner") fail("permission-denied", "Owner required.");
+      if (linked.length)
+        fail(
+          "failed-precondition",
+          "Delete the team projects before deleting the team.",
+        );
       await require("./deletion").deleteWorkspace(tx, ref, uid);
+      if (resource.get("teamId"))
+        tx.delete(
+          db.doc("teams/" + resource.get("teamId") + "/projects/" + ref.id),
+        );
       log();
       return {};
     }
@@ -194,6 +308,7 @@ exports.workspace = onCall(async (request) => {
       if (!(await tx.get(member(target))).exists)
         fail("not-found", "Member unavailable.");
       if (action === "remove") {
+        mirror(target, null);
         tx.delete(member(target));
         tx.delete(index(target));
       } else if (action === "transfer") {
@@ -214,3 +329,5 @@ exports.workspace = onCall(async (request) => {
 exports.notifyMessage = require("./notifications").notifyMessage;
 
 exports.archiveSnapshot = require("./backups").archiveSnapshot;
+
+exports.compactUpdates = require("./compaction").compactUpdates;

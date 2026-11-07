@@ -7,3 +7,4 @@
 - The editor remained visible without horizontal document overflow at 1920×1080, 1440×900, 1366×768, 768×900 and 390×844. These checks cover layout bounds, not a full touch-device accessibility audit.
 - Client production dependency audit reported zero findings. Functions and presence each reported six moderate findings and zero high or critical findings.
 - Live OAuth, actual email delivery, deployed Rules, production Storage, Hosting, Cloud Run scaling and load testing remain unverified.
+- Additional emulator checks verified folder rename, rejection of nonempty folder deletion, file tombstones, inherited team-project access and removal. The two-browser run also verified notification delivery.

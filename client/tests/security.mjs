@@ -75,9 +75,12 @@ async function test() {
   const { code } = await action("invite", { role: "viewer" });
   await b.cmd({ action: "join", code });
   await assert.rejects(c.cmd({ action: "join", code }));
+  const folder = await action("createFolder", { target: "", name: "src" });
+  await action("renameFolder", { target: folder.id, name: "source" });
   const file = "projects/" + id + "/files/main";
   await setDoc(doc(a.db, file), {
     name: "main.js",
+    parent: folder.id,
     createdAt: serverTimestamp(),
   });
   await assert.rejects(
@@ -92,6 +95,7 @@ async function test() {
     ),
   );
   await assert.rejects(b.cmd({ action: "transfer", id, target: b.uid }));
+  await assert.rejects(action("deleteFolder", { target: folder.id }));
   await action("snapshot");
   const { id: copy } = await action("duplicate");
   assert.equal(
@@ -118,7 +122,17 @@ async function test() {
     id: team.id,
     role: "editor",
   });
+  const teamProject = await a.cmd({
+    action: "createTeamProject",
+    kind: "teams",
+    id: team.id,
+    name: "Shared engineering",
+  });
   await b.cmd({ action: "join", code: invite.code });
+  assert.equal(
+    (await getDoc(doc(b.db, "projects/" + teamProject.id))).get("teamId"),
+    team.id,
+  );
   await a.cmd({
     action: "transfer",
     kind: "teams",
@@ -127,6 +141,16 @@ async function test() {
   });
   await assert.rejects(
     a.cmd({ action: "transfer", kind: "teams", id: team.id, target: a.uid }),
+  );
+  await b.cmd({ action: "remove", kind: "teams", id: team.id, target: a.uid });
+  await assert.rejects(getDoc(doc(a.db, "projects/" + teamProject.id)));
+  await action("deleteFile", { target: "main" });
+  await action("deleteFolder", { target: folder.id });
+  await assert.rejects(
+    setDoc(doc(a.db, file), {
+      name: "reclaimed",
+      createdAt: serverTimestamp(),
+    }),
   );
   await sendEmailVerification(a.auth.currentUser);
   async function oob(mode) {

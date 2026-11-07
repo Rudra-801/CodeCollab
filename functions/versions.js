@@ -7,7 +7,14 @@ const invalid = (message) => {
 async function capture(tx, project) {
   const files = await tx.get(project.collection("files").limit(65));
   if (files.size > 64) invalid("Snapshot limit is 64 files.");
-  const output = [];
+  const directory = await tx.get(project.collection("folders").limit(65));
+  if (directory.size > 64) invalid("Snapshot limit is 64 folders.");
+  const output = directory.docs.map((d) => ({
+    kind: "folder",
+    id: d.id,
+    name: d.get("name"),
+    parent: d.get("parent"),
+  }));
   let size = 0;
   for (const file of files.docs) {
     const updates = await tx.get(file.ref.collection("updates").limit(1001));
@@ -18,14 +25,27 @@ async function capture(tx, project) {
     );
     size += bytes.length;
     if (size > 700000) invalid("Snapshot exceeds the inline backup limit.");
-    output.push({ name: file.get("name"), bytes });
+    output.push({
+      name: file.get("name"),
+      parent: file.get("parent") || "",
+      bytes,
+    });
   }
   return output;
 }
 function writeFiles(tx, project, files, uid) {
   for (const file of files) {
+    if (file.kind === "folder") {
+      tx.create(project.collection("folders").doc(file.id), {
+        name: file.name,
+        parent: file.parent,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      continue;
+    }
     const ref = project.collection("files").doc();
     tx.create(ref, {
+      parent: file.parent || "",
       name: file.name,
       createdAt: FieldValue.serverTimestamp(),
     });
@@ -45,7 +65,7 @@ async function versionAction({ action, tx, project, uid, role, target }) {
       ref = versions.doc();
     tx.create(ref, {
       uid,
-      fileCount: files.length,
+      fileCount: files.filter((f) => f.kind !== "folder").length,
       createdAt: FieldValue.serverTimestamp(),
     });
     tx.create(ref.collection("backup").doc("files"), { files });

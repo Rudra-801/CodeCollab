@@ -14,10 +14,12 @@ service cloud.firestore {
    allow read: if kind in ['teams','projects'] && member(kind,id);
    match /{sub}/{entry} { allow read: if kind in ['teams','projects'] && sub in ['members','activity'] && member(kind,id); }
   }
+  match /teams/{t}/projects/{id} { allow read: if member('teams',t); }
+  match /projects/{p}/folders/{id} { allow read: if member('projects',p); }
   match /projects/{p}/files/{f} {
    allow read: if member('projects',p);
    function validName() { return request.resource.data.name is string && request.resource.data.name.size()>0 && request.resource.data.name.size()<=160; }
-   allow create: if edit(p) && !exists(/databases/$(database)/documents/projects/$(p)/deletedFiles/$(f)) && validName() && request.resource.data.keys().hasOnly(['name','createdAt']) && request.resource.data.createdAt==request.time;
+   allow create: if edit(p) && !exists(/databases/$(database)/documents/projects/$(p)/deletedFiles/$(f)) && validName() && request.resource.data.keys().hasOnly(['name','createdAt','parent']) && (request.resource.data.get('parent','') == '' || exists(/databases/$(database)/documents/projects/$(p)/folders/$(request.resource.data.parent))) && request.resource.data.createdAt==request.time;
    allow update: if edit(p) && validName() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
    match /updates/{u} {
     allow read: if member('projects',p) && exists(/databases/$(database)/documents/projects/$(p)/files/$(f));
@@ -31,6 +33,9 @@ service cloud.firestore {
   }
  }
 }
+
+
+
 
 
 

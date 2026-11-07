@@ -13,10 +13,15 @@ exports.archiveSnapshot = onDocumentCreated(
       .file("backups/" + project + "/" + version + ".json.gz");
     const data = event.data
       .get("files")
-      .map((f) => ({
-        name: f.name,
-        bytes: Buffer.from(f.bytes).toString("base64"),
-      }));
+      .map((f) =>
+        f.kind === "folder"
+          ? f
+          : {
+              parent: f.parent || "",
+              name: f.name,
+              bytes: Buffer.from(f.bytes).toString("base64"),
+            },
+      );
     try {
       await file.save(gzipSync(JSON.stringify({ format: 1, files: data })), {
         resumable: false,

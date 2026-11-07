@@ -272,3 +272,4 @@ code {
 .yRemoteSelectionHead {
   border-left: 2px solid #ff2d95;
 }
+.featuregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:24px;padding:20px 0}.featuregrid section{border-top:1px solid var(--line)}.ide aside section button{display:block;margin:5px 0;width:100%}

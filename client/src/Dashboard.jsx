@@ -61,6 +61,10 @@ export default function Dashboard({ user, logout }) {
   const [kind, K] = useState("projects"),
     [id, P] = useState(""),
     [search, Q] = useState(""),
+    [filter, H] = useState("all"),
+    [inviteToken, I] = useState(
+      new URLSearchParams(location.search).get("invite") || "",
+    ),
     [notice, N] = useState(""),
     [tab, T] = useState("work"),
     [prefs, F] = useState({
@@ -112,6 +116,9 @@ export default function Dashboard({ user, logout }) {
     }
   }
   const act = (action, extra = {}) => command({ action, kind, id, ...extra });
+  const teamProjects = useRows(
+    kind === "teams" && base ? base + "/projects" : null,
+  );
   const versions = useRows(
     kind === "projects" && base ? base + "/versions" : null,
     "createdAt",
@@ -276,6 +283,30 @@ export default function Dashboard({ user, logout }) {
             ))}
           </nav>
           <section className="toolbar">
+            <select
+              aria-label="Workspace filter"
+              value={filter}
+              onChange={(e) => H(e.target.value)}
+            >
+              <option value="all">All workspaces</option>
+              <option value="mine">My workspaces</option>
+              <option value="shared">Shared with me</option>
+            </select>
+            {inviteToken && (
+              <button
+                onClick={() =>
+                  run(async () => {
+                    const r = await act("join", { code: inviteToken });
+                    I("");
+                    history.replaceState(null, "", location.pathname);
+                    K(r.kind);
+                    P(r.id);
+                  })
+                }
+              >
+                Accept invitation
+              </button>
+            )}
             <input
               aria-label="Search by name"
               placeholder={"Search " + kind}
@@ -308,18 +339,26 @@ export default function Dashboard({ user, logout }) {
             </button>
           </section>
           <div className="grid">
-            {index.rows?.map((row) => (
-              <Item
-                key={row.id}
-                path={kind + "/" + row.id}
-                role={row.role}
-                open={() => {
-                  C("");
-                  P(row.id);
-                }}
-                search={search}
-              />
-            ))}
+            {index.rows
+              ?.filter(
+                (row) =>
+                  filter === "all" ||
+                  (filter === "mine"
+                    ? row.role === "owner"
+                    : row.role !== "owner"),
+              )
+              .map((row) => (
+                <Item
+                  key={row.id}
+                  path={kind + "/" + row.id}
+                  role={row.role}
+                  open={() => {
+                    C("");
+                    P(row.id);
+                  }}
+                  search={search}
+                />
+              ))}
           </div>
           {!index.rows?.length && <p>No {kind} yet.</p>}
         </main>
@@ -328,6 +367,40 @@ export default function Dashboard({ user, logout }) {
           <main className="content">
             <button onClick={() => P("")}>← Workspaces</button>
             <h2>{resource.name}</h2>
+            {kind === "teams" && (
+              <section>
+                <h3>Team projects</h3>
+                {teamProjects.rows?.map((p) => (
+                  <Item
+                    key={p.id}
+                    path={"projects/" + p.id}
+                    role={role}
+                    search=""
+                    open={() => {
+                      K("projects");
+                      P(p.id);
+                    }}
+                  />
+                ))}
+                {admin && (
+                  <button
+                    onClick={() => {
+                      const name = prompt("Team project name");
+                      if (name)
+                        run(async () => {
+                          const result = await act("createTeamProject", {
+                            name,
+                          });
+                          K("projects");
+                          P(result.id);
+                        });
+                    }}
+                  >
+                    Create team project
+                  </button>
+                )}
+              </section>
+            )}
             {kind === "projects" && role && (
               <Suspense fallback={<p>Loading editor…</p>}>
                 <IDE
@@ -397,6 +470,18 @@ export default function Dashboard({ user, logout }) {
                 {code && (
                   <p>
                     Invitation code <code>{code}</code>{" "}
+                    <button
+                      onClick={() =>
+                        run(async () => {
+                          await navigator.clipboard.writeText(
+                            location.origin + "/?invite=" + code + "#login",
+                          );
+                          N("Invite link copied.");
+                        })
+                      }
+                    >
+                      Copy invite link
+                    </button>{" "}
                     <button
                       onClick={() =>
                         run(async () => {
