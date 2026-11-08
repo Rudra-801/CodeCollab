@@ -39,7 +39,7 @@ async function shot() {
   await p.getByRole("button", { name: "utils.hpp" }).click();
   await expect(p.locator(".studio-tab")).toContainText("utils.hpp");
   await nav("playground");
-  await expect(p.getByLabel("Source code")).toBeVisible();
+  await expect(p.locator(".pg-monaco .view-lines")).toBeVisible();
   await capture("playground");
   for (const route of ["login", "forgot", "register"]) {
     await nav(route);

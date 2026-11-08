@@ -3,10 +3,11 @@ export default function BrowserRun({ source, language }) {
   const [input, I] = useState(""),
     [busy, B] = useState(false),
     [result, R] = useState(null),
+    [history, setHistory] = useState([]),
     running = useRef(null);
   function stop(){running.current?.cancel()}
   useEffect(()=>()=>{running.current?.cancel();running.current=null},[]);
-  async function run(){R(null);B(true);try{const job=startRun(source(),input,language);running.current=job;const value=await job.result;if(running.current===job)R(value)}catch(e){R({exitCode:1,stderr:e.message})}finally{running.current=null;B(false)}}  return (
+  async function run(){R(null);B(true);try{const job=startRun(source(),input,language);running.current=job;const value=await job.result;if(running.current===job){R(value);setHistory(items=>[{time:new Date().toLocaleTimeString(),...value},...items].slice(0,10))}}catch(e){R({exitCode:1,stderr:e.message})}finally{running.current=null;B(false)}}  return (
     <section className="worktools">
       <small>{language==="python"?"Python · Skulpt 1.2":"JavaScript engine · QuickJS"} · 24 MiB guest heap</small>
       <label>
@@ -41,6 +42,7 @@ export default function BrowserRun({ source, language }) {
           <pre>{result.stderr}</pre>
         </div>
       )}
+      {history.length>0 && <details><summary>Execution history ({history.length})</summary><ol>{history.map((entry,i)=><li key={i}><button onClick={()=>R(entry)}>{entry.time} · Exit {entry.exitCode}{entry.elapsedMs!=null && " · "+entry.elapsedMs+" ms"}</button></li>)}</ol></details>}
     </section>
   );
 }

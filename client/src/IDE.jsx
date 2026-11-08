@@ -1,4 +1,5 @@
 import { Files, Search, MessageSquare } from "lucide-react";
+import PanelDivider from "./PanelDivider";
 import Tools, { languageFor } from "./Tools";
 import Folders from "./Folders";
 import { connectPresence } from "./presence";
@@ -153,6 +154,17 @@ function Editor({ path, uid, name, writable, prefs }) {
   );
 }
 export default function IDE({ project, user, writable, prefs }) {
+  const [panels,setPanels]=useState(()=>{
+    try {
+      const saved=JSON.parse(localStorage.getItem("cc-panel-widths"));
+      if ([saved?.explorer,saved?.chat].every(n=>Number.isFinite(n)&&n>=12&&n<=30)) return saved;
+    } catch {}
+    return {explorer:18,chat:21};
+  });
+  useEffect(()=>{
+    const timer=setTimeout(()=>{try{localStorage.setItem("cc-panel-widths",JSON.stringify(panels))}catch{}},200);
+    return ()=>clearTimeout(timer);
+  },[panels]);
   const base = "projects/" + project,
     [active, A] = useState(""),
     [error, E] = useState(""),
@@ -175,7 +187,7 @@ export default function IDE({ project, user, writable, prefs }) {
     }
   }
   return (
-    <section className="ide">
+    <section className="ide" style={{"--explorer-width":panels.explorer+"%","--chat-width":panels.chat+"%"}}>
       <nav className="activity-rail" aria-label="Editor navigation">
         <button
           aria-label="Focus file explorer"
@@ -294,6 +306,7 @@ export default function IDE({ project, user, writable, prefs }) {
           </>
         )}
       </aside>
+      <PanelDivider label="Explorer width" value={panels.explorer} onChange={explorer=>setPanels(p=>({...p,explorer}))}/>
       <div className="canvas">
         <nav aria-label="Open files">
           {tabs
@@ -325,6 +338,7 @@ export default function IDE({ project, user, writable, prefs }) {
           <p>No files yet.</p>
         )}
       </div>
+      <PanelDivider label="Chat width" value={panels.chat} reverse onChange={chat=>setPanels(p=>({...p,chat}))}/>
       <details className="chat" open>
         <summary>Project chat</summary>
         <div className="messages">
