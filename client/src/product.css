@@ -1103,3 +1103,40 @@ body{background:#0a0a0a}
 .preferences-panel>p{color:#9aa7b8;margin-bottom:25px}
 .cc-dialog{padding:30px;max-width:560px}
 @media(max-width:600px){.account{padding:26px 20px}.work-area>.content{padding-top:20px}.notification-empty h2{font-size:25px}.cc-dialog{padding:20px}}
+
+.settings-columns{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.1fr);gap:28px;align-items:start}
+.settings-account{display:grid;gap:24px;min-width:0}
+.settings-card{padding:26px;border:1px solid transparent;border-radius:20px;background:linear-gradient(#07121deb,#071018f5) padding-box,linear-gradient(120deg,#00c8f8,#334353 50%,#ff2d95) border-box}
+.settings-card h2{font-size:22px;margin:0 0 8px}
+.settings-card p{color:#b4c2d1;overflow-wrap:anywhere}
+.settings-card button{border-color:#00c8f8}
+.danger-card button{border-color:#ff2d95;color:#ff6ab3}
+.provider-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:15px}
+.provider-row strong{color:#21c987;border:1px solid #145744;padding:5px 12px;border-radius:10px;font-size:13px}
+.settings-columns .preferences-panel{max-width:none;margin:0}
+.preferences-panel label{margin:22px 0}
+.preferences-panel>button{width:100%;margin-top:20px}
+.account h2 em{color:#ff2d95;font-style:normal}
+.auth-stage .account{width:min(100%,540px);text-align:center;background:linear-gradient(#03101bef,#060c16f5) padding-box,linear-gradient(110deg,#00c8f8,#334451 50%,#ff2d95) border-box;border-width:2px;border-radius:28px}
+.account form{text-align:left}.account h2{font-size:clamp(27px,3vw,38px)}
+.account .auth-desc{font-size:16px;line-height:1.6}
+.auth-stage .workspace-atmosphere{opacity:.85}
+.auth-stage .account input{background:#0b1520bf}
+.auth-stage .account input[type=checkbox]{accent-color:#00c8f8}
+.account form>button{font-size:16px}
+.app-layout .summary-strip{gap:24px;margin:24px 0}
+.app-layout .summary-strip>div{border-radius:12px;background:linear-gradient(120deg,#05151fee,#10101ae8);border:1px solid #27515f;border-bottom-color:#00c8f8;padding:20px}
+.app-layout .item{min-height:84px;background:#08111bd9;border-radius:12px}
+.app-layout .content>nav{gap:14px}
+.app-layout .crumb{background:#040d14d9;min-height:60px}
+@media(max-width:1000px){.settings-columns{grid-template-columns:1fr;gap:20px}}
+@media(max-width:600px){.settings-card{padding:20px}.auth-stage{padding:20px 12px}.auth-stage .account{padding:28px 20px}}
+.settings-columns .preferences-panel{display:flex;flex-direction:column;gap:14px}
+.settings-columns .preferences-panel>label{margin:4px 0;gap:10px}
+.settings-columns .preferences-panel>p{margin:0 0 12px;line-height:1.6}
+.settings-columns .preferences-panel h2{margin:0}
+.settings-card h2{line-height:1.4}
+.settings-card p{line-height:1.6;margin:8px 0 18px}
+.settings-card button{margin-right:8px;margin-bottom:4px}
+.settings-columns input[type=checkbox]{accent-color:#00c8f8;width:20px;height:20px;vertical-align:middle;margin-right:12px}
+.settings-columns .preferences-panel>label:has(input[type=checkbox]){padding:9px 0}

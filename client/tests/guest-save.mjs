@@ -28,5 +28,14 @@ try {
   await openSaved();
   await page.reload();
   await openSaved();
+  if(process.env.CAPTURE_UI){
+    await page.getByRole("button",{name:"Settings",exact:true}).click();
+    for(const width of [1920,1440,1366,768,390]){
+      await page.setViewportSize({width,height:900});
+      await page.screenshot({path:"qa/deployed/settings-review-"+width+".png"});
+      const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+      if(overflow>1)throw Error("Settings overflow "+width);
+    }
+  }
   console.log("PASS guest draft, registration, atomic save, workspace Monaco content and refresh");
 } finally {await browser.close();}

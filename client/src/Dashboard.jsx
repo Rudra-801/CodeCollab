@@ -250,8 +250,7 @@ export default function Dashboard({ user, logout }) {
         ) : tab === "settings" ? (
           <main className="content">
             <small className="section-kicker">ACCOUNT SETTINGS</small><h1>Settings</h1><p className="page-description">Manage your account, preferences and workspace experience.</p>
-            <Assets uid={user.uid} />
-            <form className="preferences-panel"
+            <div className="settings-columns"><form className="preferences-panel"
               onSubmit={(e) => {
                 e.preventDefault();
                 run(async () => {
@@ -289,8 +288,7 @@ export default function Dashboard({ user, logout }) {
                 </label>
               ))}
               <button>Save preferences</button>
-            </form>
-            <p>{user.email}</p>
+            </form><div className="settings-account"><section className="settings-card"><h2>Account</h2><p>Your account and security settings.</p><p>{user.email}</p>
             {!user.emailVerified && (
               <button
                 onClick={() =>
@@ -313,10 +311,7 @@ export default function Dashboard({ user, logout }) {
             >
               Reset password
             </button>
-            <p>
-              Sign-in providers ·{" "}
-              {user.providerData.map((p) => p.providerId).join(", ")}
-            </p>
+            </section><section className="settings-card"><h2>Sign-in Providers</h2><p>Manage how you sign in to CodeCollab.</p>{user.providerData.map(p=><div className="provider-row" key={p.providerId}><span>{p.providerId}</span><strong>Connected</strong></div>)}</section><section className="settings-card danger-card"><h2>Delete Account</h2><p>Permanently delete your account and associated data.</p>
             <button
               onClick={() => {
                 if (confirm("Permanently delete your account and preferences?"))
@@ -327,7 +322,7 @@ export default function Dashboard({ user, logout }) {
               }}
             >
               Delete account
-            </button>
+            </button></section><section className="settings-card"><h2>Profile image</h2><Assets uid={user.uid}/></section></div></div>
           </main>
         ) : !id ? (
           <main className="content">

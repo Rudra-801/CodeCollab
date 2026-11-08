@@ -88,7 +88,7 @@ function Account({ route }) {
         <a href="/">
           <Brand />
         </a>
-        <h2>{title}</h2>
+        <h2>{mode === "register" ? <>Create your <em>account</em></> : title}</h2>
         <p className="auth-desc">
           {
             {
@@ -152,7 +152,7 @@ function Account({ route }) {
           {modes.includes(mode) && (
             <label>
               Email
-              <input required type="email" name="email" autoComplete="email" />
+              <input required placeholder="Enter your email" type="email" name="email" autoComplete="email" />
             </label>
           )}
           {["register", "login", "resetPassword"].includes(mode) && (
@@ -162,6 +162,7 @@ function Account({ route }) {
                 <input
                   required
                   name="password"
+                  placeholder={mode==="login" ? "Enter your password" : "Create a strong password"}
                   type={show ? "text" : "password"}
                   minLength={mode === "login" ? 1 : 8}
                   autoComplete={
