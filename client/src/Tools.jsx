@@ -67,7 +67,7 @@ export default function Tools({ editor, path, name }) {
     }
   }
   return (
-    <details className="worktools">
+    <details className="worktools" open>
       <summary>Execution and code assistance</summary>
       <h3>Run {name}</h3>
       {/\.html?$/i.test(name) && <HtmlPreview editor={editor} />}

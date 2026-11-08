@@ -1140,3 +1140,14 @@ body{background:#0a0a0a}
 .settings-card button{margin-right:8px;margin-bottom:4px}
 .settings-columns input[type=checkbox]{accent-color:#00c8f8;width:20px;height:20px;vertical-align:middle;margin-right:12px}
 .settings-columns .preferences-panel>label:has(input[type=checkbox]){padding:9px 0}
+
+.ide-mode-toolbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:8px 12px;background:#10151d;border-bottom:1px solid #27313d}
+.ide-mode-toolbar>strong{margin-right:auto}.ide-mode-toolbar button[aria-pressed=true]{border-color:#ff2d95;color:#ff72b8}
+.app-layout.editing .content:has(.ide){width:100%;padding:0 14px}
+.app-layout.editing .app-nav{display:none}.app-layout.editing{grid-template-columns:minmax(0,1fr)}
+.app-layout .ide{height:auto;min-height:75vh;grid-template-rows:auto minmax(0,1fr)}
+.app-layout .ide .editor{height:55vh;min-height:300px}
+.mode-simple>.activity-rail,.mode-simple>.chat,.mode-simple>.panel-divider{display:none}
+.app-layout .ide.mode-simple{grid-template-columns:minmax(150px,18%) minmax(0,1fr)}
+.ide .worktools{background:#10151d;border-top:1px solid #27313d;max-height:340px;overflow:auto;resize:vertical}
+@media(max-width:800px){.app-layout .ide.mode-simple{grid-template-columns:1fr}.ide-mode-toolbar{flex-wrap:wrap}.app-layout.editing .content:has(.ide){padding:0 8px}.app-layout .ide .editor{height:55vh}}

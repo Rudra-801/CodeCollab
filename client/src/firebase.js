@@ -34,9 +34,14 @@ if (emulator && app) {
   connectFunctionsEmulator(functions, "127.0.0.1", 5001);
 }
 import { createPersonalProject } from "./createPersonalProject";
+const starters = {
+ python:{name:"main.py",source:'name = input("Your name: ")\nprint("Hello, " + name + "!")'},
+ javascript:{name:"main.js",source:'const name = readline() || "world";\nconsole.log("Hello, " + name + "!");'},
+ typescript:{name:"main.ts",source:'const name: string = readline() || "world";\nconsole.log("Hello, " + name + "!");'}
+};
 export const command = async (data) =>
   data.action === "create" && data.kind === "projects"
-    ? createPersonalProject(db, auth.currentUser.uid, data.name)
+    ? createPersonalProject(db, auth.currentUser.uid, data.name, starters[data.template])
     : (await httpsCallable(functions, "workspace")(data)).data;
 
 export const invokeTool = async (name, data) =>

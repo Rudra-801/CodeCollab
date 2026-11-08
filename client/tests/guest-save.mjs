@@ -26,6 +26,11 @@ try {
     await expect(page.locator(".view-lines")).toContainText("guest-draft-42",{timeout:30000});
   }
   await openSaved();
+  await page.getByRole("button",{name:"Pro",exact:true}).click();
+  await expect(page.locator(".ide")).toHaveClass(/mode-pro/);
+  await expect(page.locator(".view-lines")).toContainText("guest-draft-42");
+  await page.getByRole("button",{name:"Simple",exact:true}).click();
+  await expect(page.locator(".ide")).toHaveClass(/mode-simple/);
   await page.reload();
   await openSaved();
   if(process.env.CAPTURE_UI){

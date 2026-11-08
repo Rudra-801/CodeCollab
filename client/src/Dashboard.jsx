@@ -207,8 +207,8 @@ export default function Dashboard({ user, logout }) {
           <CreateWorkspace
             kind={kind}
             close={() => setCreating(false)}
-            create={async (name) => {
-              const r = await act("create", { name });
+            create={async (name, template) => {
+              const r = await act("create", { name, template });
               P(r.id);
             }}
           />
@@ -485,6 +485,7 @@ export default function Dashboard({ user, logout }) {
               {kind === "projects" && role && (
                 <Suspense fallback={<p>Loading editor…</p>}>
                   <IDE
+                    key={id}
                     project={id}
                     user={user}
                     prefs={prefs}

@@ -20,10 +20,11 @@ export default function CreateWorkspace({ kind, close, create }) {
         onSubmit={async (e) => {
           e.preventDefault();
           const name = e.currentTarget.elements.name.value.trim();
+          const template = e.currentTarget.elements.template?.value;
           if (!name) return;
           B(true);
           try {
-            await create(name);
+            await create(name,template);
             close();
           } catch (err) {
             E(err.message);
@@ -53,6 +54,7 @@ export default function CreateWorkspace({ kind, close, create }) {
             placeholder={kind === "teams" ? "Engineering team" : "My project"}
           />
         </label>
+        {kind !== "teams" && <label>Language / template<select name="template" defaultValue="javascript"><option value="javascript">JavaScript starter</option><option value="typescript">TypeScript starter</option><option value="python">Python starter (subset)</option></select></label>}
         <div className="privacy">
           <LockKeyhole />
           <div>

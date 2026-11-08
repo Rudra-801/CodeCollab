@@ -154,6 +154,8 @@ function Editor({ path, uid, name, writable, prefs }) {
   );
 }
 export default function IDE({ project, user, writable, prefs }) {
+  const [mode,setMode]=useState(()=>{try{return localStorage.getItem("cc-mode-"+user.uid)||"simple"}catch{return "simple"}});
+  function changeMode(next){setMode(next);try{localStorage.setItem("cc-mode-"+user.uid,next)}catch{}}
   const [panels,setPanels]=useState(()=>{
     try {
       const saved=JSON.parse(localStorage.getItem("cc-panel-widths"));
@@ -166,7 +168,7 @@ export default function IDE({ project, user, writable, prefs }) {
     return ()=>clearTimeout(timer);
   },[panels]);
   const base = "projects/" + project,
-    [active, A] = useState(""),
+    [active, A] = useState(()=>{try{return localStorage.getItem("cc-file-"+user.uid+"-"+project)||""}catch{return ""}}),
     [error, E] = useState(""),
     [count, L] = useState(30),
     [search, Q] = useState(""),
@@ -174,6 +176,7 @@ export default function IDE({ project, user, writable, prefs }) {
     [folder, F] = useState("");
   const files = useRows(base + "/files"),
     chat = useRows(base + "/messages", "createdAt", count);
+  useEffect(()=>{if(active)try{localStorage.setItem("cc-file-"+user.uid+"-"+project,active)}catch{}},[active,project,user.uid]);
   const file = files.rows?.find((f) => f.id === active) || files.rows?.[0];
   useEffect(() => {
     if (file) T((t) => (t.includes(file.id) ? t : [...t, file.id]));
@@ -187,7 +190,8 @@ export default function IDE({ project, user, writable, prefs }) {
     }
   }
   return (
-    <section className="ide" style={{"--explorer-width":panels.explorer+"%","--chat-width":panels.chat+"%"}}>
+    <section className={"ide mode-"+mode} style={{"--explorer-width":panels.explorer+"%","--chat-width":panels.chat+"%"}}>
+      <div className="ide-mode-toolbar"><strong>Code workspace</strong><div role="group" aria-label="Editor mode"><button aria-pressed={mode==="simple"} onClick={()=>changeMode("simple")}>Simple</button><button aria-pressed={mode==="pro"} onClick={()=>changeMode("pro")}>Pro</button></div><button onClick={e=>{const tools=e.currentTarget.closest(".ide").querySelector(".worktools");if(tools){tools.open=true;tools.scrollIntoView({block:"nearest"});tools.querySelector("button")?.focus()}}}>Run / Output</button></div>
       <nav className="activity-rail" aria-label="Editor navigation">
         <button
           aria-label="Focus file explorer"
