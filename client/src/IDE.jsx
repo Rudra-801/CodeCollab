@@ -157,20 +157,21 @@ function Editor({ path, uid, name, writable, prefs }) {
   );
 }
 export default function IDE({ project, user, writable, prefs, onExit }) {
-  const [explorerVisible,setExplorerVisible]=useState(true);
-  const [chatVisible,setChatVisible]=useState(false);
+  const [explorerVisible,setExplorerVisible]=useState(()=>{try{return localStorage.getItem("cc-explorer-"+user.uid)!=="false"}catch{return true}});
+  const [chatVisible,setChatVisible]=useState(()=>{try{return localStorage.getItem("cc-chat-"+user.uid)==="true"}catch{return false}});
+  useEffect(()=>{try{localStorage.setItem("cc-explorer-"+user.uid,String(explorerVisible));localStorage.setItem("cc-chat-"+user.uid,String(chatVisible))}catch{}},[explorerVisible,chatVisible,user.uid]);
   const [context,setContext]=useState(null);
   const [mode,setMode]=useState(()=>{try{return localStorage.getItem("cc-mode-"+user.uid)||"simple"}catch{return "simple"}});
   function changeMode(next){setMode(next);try{localStorage.setItem("cc-mode-"+user.uid,next)}catch{}}
   const [panels,setPanels]=useState(()=>{
     try {
-      const saved=JSON.parse(localStorage.getItem("cc-panel-widths"));
+      const saved=JSON.parse(localStorage.getItem("cc-panel-widths-"+user.uid));
       if ([saved?.explorer,saved?.chat].every(n=>Number.isFinite(n)&&n>=12&&n<=30)) return saved;
     } catch {}
     return {explorer:18,chat:21};
   });
   useEffect(()=>{
-    const timer=setTimeout(()=>{try{localStorage.setItem("cc-panel-widths",JSON.stringify(panels))}catch{}},200);
+    const timer=setTimeout(()=>{try{localStorage.setItem("cc-panel-widths-"+user.uid,JSON.stringify(panels))}catch{}},200);
     return ()=>clearTimeout(timer);
   },[panels]);
   const base = "projects/" + project,
