@@ -14,7 +14,7 @@ import {
   verifyPasswordResetCode,
 } from "firebase/auth";
 import {
-  getFirestore,
+  collection, getDocs, getFirestore,
   connectFirestoreEmulator,
   doc,
   setDoc,
@@ -80,7 +80,17 @@ async function test() {
     a.db,
     a.uid,
     "Personal workspace",
+    {name: "main.py", source: "print(42)"},
   );
+  const files = await getDocs(collection(a.db, "projects", personal.id, "files"));
+  assert.equal(files.size, 1);
+  assert.equal(files.docs[0].get("name"), "main.py");
+  const updates = await getDocs(collection(files.docs[0].ref, "updates"));
+  const Y = await import("yjs");
+  const restored = new Y.Doc();
+  updates.forEach(update => Y.applyUpdate(restored, update.get("bytes").toUint8Array()));
+  assert.equal(restored.getText("content").toString(), "print(42)");
+  restored.destroy();
   assert.equal(
     (await getDoc(doc(a.db, "projects/" + personal.id))).get("owner"),
     a.uid,

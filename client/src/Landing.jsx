@@ -182,7 +182,7 @@ const features = [
   [
     Terminal,
     "Code execution",
-    "Run JavaScript and TypeScript with input, output and cancellation.",
+    "Run Python, JavaScript and TypeScript with input, output and cancellation.",
   ],
   [
     Layers,

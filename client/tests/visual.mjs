@@ -38,6 +38,9 @@ async function shot() {
   await capture("landing");
   await p.getByRole("button", { name: "utils.hpp" }).click();
   await expect(p.locator(".studio-tab")).toContainText("utils.hpp");
+  await nav("playground");
+  await expect(p.getByLabel("Source code")).toBeVisible();
+  await capture("playground");
   for (const route of ["login", "forgot", "register"]) {
     await nav(route);
     await expect(p.getByLabel("Email", { exact: true })).toBeVisible();

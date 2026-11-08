@@ -41,6 +41,10 @@ self.onmessage = async ({ data: { source, language, input } }) => {
         );
       source = compiled.outputText;
     }
+    let python;
+    if(language==="python"){
+      python=await Promise.all([import("skulpt/dist/skulpt.min.js?raw"),import("skulpt/dist/skulpt-stdlib.js?raw")]);
+    }
     const engine = await newQuickJSWASMModuleFromVariant(
       newVariant(variant, { wasmLocation }),
     );
@@ -61,7 +65,7 @@ self.onmessage = async ({ data: { source, language, input } }) => {
     );
     for (const name of ["__stdout", "__stderr"])
       bind(name, (v) => {
-        const value = vm.getString(v) + "\n";
+        const value = vm.getString(v) + (python ? "" : "\n");
         const remaining = 32768 - stdout.length - stderr.length;
         if (name === "__stdout") stdout += value.slice(0, remaining);
         else stderr += value.slice(0, remaining);
@@ -79,7 +83,12 @@ self.onmessage = async ({ data: { source, language, input } }) => {
     evaluate(
       'globalThis.console={log:(...args)=>__stdout(args.map(String).join(" ")),error:(...args)=>__stderr(args.map(String).join(" "))}',
     );
-    evaluate(source);
+    if(python){
+      evaluate("globalThis.self=globalThis;globalThis.setTimeout=f=>Promise.resolve().then(f);globalThis.clearTimeout=()=>{};");
+      for(const module of python)evaluate(module.default+"\n;void 0;");
+      evaluate("Sk.configure({__future__:Sk.python3,output:__stdout,inputfun:()=>readline(),read:p=>{if(!Object.hasOwn(Sk.builtinFiles.files,p))throw Error('Module unavailable');return Sk.builtinFiles.files[p]}});");
+      evaluate("Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody('<stdin>',false,"+JSON.stringify(source)+",true)).then(()=>globalThis.pythonDone=true,e=>globalThis.pythonError=String(e));void 0;");
+    }else evaluate(source);
     while (runtime.hasPendingJob()) {
       const jobs = runtime.executePendingJobs(32);
       if (jobs.error) {
@@ -88,6 +97,7 @@ self.onmessage = async ({ data: { source, language, input } }) => {
       }
       if (performance.now() > deadline) throw Error("Time limit exceeded.");
     }
+    if (python) evaluate("if(globalThis.pythonError)throw Error(pythonError);if(!globalThis.pythonDone)throw Error('Python execution did not finish');");
     finish(0);
   } catch (e) {
     stderr += (stderr ? "\n" : "") + String(e.message || e).slice(0, 1024);
@@ -97,3 +107,4 @@ self.onmessage = async ({ data: { source, language, input } }) => {
     runtime?.dispose();
   }
 };
+

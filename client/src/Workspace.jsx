@@ -227,12 +227,13 @@ export default function Workspace() {
       window.removeEventListener("hashchange", change);
     };
   }, []);
+  useEffect(()=>{if(user&&["login","register"].includes(route)&&sessionStorage.getItem("cc-playground-resume")==="yes"){sessionStorage.removeItem("cc-playground-resume");location.hash="playground"}},[user,route]);
   if (new URLSearchParams(location.search).has("oobCode"))
     return <Account route={route} />;
-  if (route === "playground")
+  if (route.split("?")[0] === "playground")
     return (
       <Suspense fallback={<main>Loading playground…</main>}>
-        <Playground />
+        <Playground user={user}/>
       </Suspense>
     );
   if (user === undefined) return <main>Loading workspace…</main>;
@@ -248,3 +249,5 @@ export default function Workspace() {
     <Landing />
   );
 }
+
+

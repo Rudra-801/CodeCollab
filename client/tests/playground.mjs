@@ -5,6 +5,19 @@ try {
   await p.goto(
     (process.env.TEST_URL || "http://127.0.0.1:5179") + "/#playground",
   );
+  await p.getByLabel("Language").selectOption("python");
+  await p.getByLabel("Standard input").fill("7");
+  await p.getByRole("button", {name:"Run program"}).click();
+  await expect(p.getByRole("status")).toContainText("49", {timeout:20000});
+  await p.getByText("Test cases (1)").click();
+  await p.getByLabel("Case input").fill("8");
+  await p.getByLabel("Expected output").fill("64");
+  await p.getByRole("button", {name:"Run all cases"}).click();
+  await expect(p.getByText("Passed", {exact:true})).toBeVisible({timeout:20000});
+  await p.getByLabel("Source code").fill("raise ValueError('invalid input')");
+  await p.getByRole("button", {name:"Run program"}).click();
+  await expect(p.getByRole("status")).toContainText("invalid input", {timeout:20000});
+  console.log("PASS guest Python stdin, square calculation, case verdict and runtime error");
   for (const language of ["javascript", "typescript"]) {
     await p.getByLabel("Language").selectOption(language);
     await p.getByLabel("Standard input").fill("Rudra");

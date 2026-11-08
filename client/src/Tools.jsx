@@ -71,7 +71,7 @@ export default function Tools({ editor, path, name }) {
       <summary>Execution and code assistance</summary>
       <h3>Run {name}</h3>
       {/\.html?$/i.test(name) && <HtmlPreview editor={editor} />}
-      {["javascript", "typescript"].includes(lang) ? (
+      {["python", "javascript", "typescript"].includes(lang) ? (
         <BrowserRun
           language={lang}
           source={() => editor.current.model.getValue()}
@@ -141,3 +141,4 @@ export default function Tools({ editor, path, name }) {
     </details>
   );
 }
+

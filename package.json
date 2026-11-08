@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npm run dev --prefix client",
+    "prestart": "npm run build --prefix client -- --mode staging",
+    "start": "node server.js",
     "dev": "npm run dev --prefix client",
     "legacy": "node server.js",
     "build": "npm run build --prefix client",
@@ -15,3 +16,4 @@
     "node": ">=22"
   }
 }
+

@@ -39,7 +39,35 @@ if(parts[3]==='invite'&&method==='POST'){if(!owner)return err(res,403,'Owner onl
 if(parts[3]==='members'&&parts[4]&&method==='PATCH'){if(!owner)return err(res,403,'Owner only');if(!(parts[4] in p.members))return err(res,404,'Member not found');const b=await json(req);if(!['editor','viewer'].includes(b.role))return err(res,400,'Invalid role');p.members[parts[4]]=b.role;await save();emit(p.id,'members',{});return response(res,200,{ok:true})}
 if(parts[3]==='members'&&parts[4]&&method==='DELETE'){if(!owner)return err(res,403,'Owner only');delete p.members[parts[4]];await save();emit(p.id,'members',{});return response(res,200,{ok:true})}
 return err(res,404,'Unknown API route')}
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'};
-const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost');res.setHeader('x-content-type-options','nosniff');res.setHeader('referrer-policy','no-referrer');res.setHeader('x-frame-options','DENY');if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')return err(res,405,'Method not allowed');const name=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname.slice(1));const file=path.resolve(PUB,name);if(!file.startsWith(PUB+path.sep)&&file!==path.join(PUB,'index.html'))return err(res,403,'Forbidden');fs.readFile(file,(e,data)=>{if(e){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'content-type':mime[path.extname(file)]||'application/octet-stream'});res.end(data)})}catch(e){console.error(e);if(!res.headersSent)err(res,e.message==='Payload too large'?413:400,e.message||'Request failed')}});
+const DIST=path.join(ROOT,'client','dist');
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.wasm':'application/wasm','.png':'image/png'};
+const server=http.createServer(async(req,res)=>{
+  try{
+    const url=new URL(req.url,'http://localhost');
+    res.setHeader('x-content-type-options','nosniff');
+    res.setHeader('referrer-policy','no-referrer');
+    res.setHeader('x-frame-options','DENY');
+    if(url.pathname.startsWith('/api/'))return await api(req,res,url);
+    if(!['GET','HEAD'].includes(req.method))return err(res,405,'Method not allowed');
+    let file;
+    if(url.pathname==='/' && (url.searchParams.has('legacy')||url.searchParams.has('invite')))file=path.join(PUB,'legacy.html');
+    else if(['/','/index.html'].includes(url.pathname))file=path.join(ROOT,'index.html');
+    else if(url.pathname==='/public/index.html')file=path.join(PUB,'index.html');
+    else if(url.pathname==='/local-entry.js')file=path.join(ROOT,'local-entry.js');
+    else if(['/app.js','/style.css','/legacy.html'].includes(url.pathname))file=path.join(PUB,url.pathname.slice(1));
+    else{
+      const relative=decodeURIComponent(url.pathname).replace(/^\/(?:client\/dist\/)?/,'');
+      file=path.resolve(DIST,relative);
+      if(!file.startsWith(DIST+path.sep))return err(res,403,'Forbidden');
+    }
+    fs.readFile(file,(error,bytes)=>{
+      if(error){res.writeHead(404);return res.end('File unavailable')}
+      res.writeHead(200,{'content-type':mime[path.extname(file)]||'application/octet-stream','cache-control':'no-cache'});
+      res.end(req.method==='HEAD'?undefined:bytes);
+    });
+  }catch(error){if(!res.headersSent)err(res,400,'Invalid request')}
+});
 if(require.main===module)server.listen(PORT,()=>console.log(`CodeCollab running at http://localhost:${PORT}`));
 module.exports={server,db};
+
+

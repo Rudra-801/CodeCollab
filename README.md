@@ -2,6 +2,10 @@
 
 CodeCollab is a React development workspace with Firebase Authentication, Firestore, Cloud Storage, callable Cloud Functions, Monaco and Yjs. A separate WebSocket service delivers cursor awareness. This release has passed local emulator and browser checks. The staging frontend is live at https://codecollab-rudra.web.app. See STAGING.md for verified services and outstanding backend requirements.
 
+## Guest playground
+
+Open `/#playground` to run Python (Skulpt), JavaScript or TypeScript without signing in. Programs run in a disposable QuickJS WebAssembly worker on the visitor’s device. Python supports the bundled Skulpt standard-library subset. Test cases compare real program output against expected output. Saving creates a personal project and its initial Yjs document in one Firestore batch.
+
 ## Run locally
 
 Use Node 22, Java 21, Firebase CLI, and Chrome for browser testing. Install each package from its lockfile.
@@ -45,4 +49,5 @@ For migration, make an encrypted offline backup, establish a verified owner-to-F
 
 See SCHEMA.md and CHANGELOG.md for data layout and release scope.
 
-For the preserved local JSON application, use npm run legacy and open http://localhost:5000/?legacy=1. Its signed-out root directs fresh visitors to the current staging application.
+For the preserved local JSON application, use npm run legacy and open http://localhost:5000/?legacy=1. The root index.html and public/index.html both load the modern application from the local client/dist build. Run npm start and open http://localhost:5000. Use npm run dev for the Vite development server.
+

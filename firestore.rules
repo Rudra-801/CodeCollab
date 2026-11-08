@@ -37,11 +37,11 @@ service cloud.firestore {
   match /projects/{p}/files/{f} {
    allow read: if member('projects',p);
    function validName() { return request.resource.data.name is string && request.resource.data.name.size()>0 && request.resource.data.name.size()<=160; }
-   allow create: if edit(p) && !exists(/databases/$(database)/documents/projects/$(p)/deletedFiles/$(f)) && validName() && request.resource.data.keys().hasOnly(['name','createdAt','parent']) && (request.resource.data.get('parent','') == '' || exists(/databases/$(database)/documents/projects/$(p)/folders/$(request.resource.data.parent))) && request.resource.data.createdAt==request.time;
+   allow create: if (newPersonalProject(p) || edit(p)) && !exists(/databases/$(database)/documents/projects/$(p)/deletedFiles/$(f)) && validName() && request.resource.data.keys().hasOnly(['name','createdAt','parent']) && (request.resource.data.get('parent','') == '' || exists(/databases/$(database)/documents/projects/$(p)/folders/$(request.resource.data.parent))) && request.resource.data.createdAt==request.time;
    allow update: if edit(p) && validName() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
    match /updates/{u} {
     allow read: if member('projects',p) && exists(/databases/$(database)/documents/projects/$(p)/files/$(f));
-    allow create: if edit(p) && exists(/databases/$(database)/documents/projects/$(p)/files/$(f)) && request.resource.data.keys().hasOnly(['bytes','uid','createdAt']) && own(request.resource.data.uid) && request.resource.data.createdAt==request.time && request.resource.data.bytes is bytes && request.resource.data.bytes.size()<=200000;
+    allow create: if ((newPersonalProject(p) && getAfter(/databases/$(database)/documents/projects/$(p)/files/$(f)).data.createdAt == request.time) || (edit(p) && exists(/databases/$(database)/documents/projects/$(p)/files/$(f)))) && request.resource.data.keys().hasOnly(['bytes','uid','createdAt']) && own(request.resource.data.uid) && request.resource.data.createdAt==request.time && request.resource.data.bytes is bytes && request.resource.data.bytes.size()<=200000;
    }
   }
   match /projects/{p}/versions/{v} { allow read: if member('projects',p); }
@@ -51,6 +51,7 @@ service cloud.firestore {
   }
  }
 }
+
 
 
 

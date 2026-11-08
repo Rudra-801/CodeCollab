@@ -1,57 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import {startRun} from "./startRun";import React, { useEffect, useRef, useState } from "react";
 export default function BrowserRun({ source, language }) {
   const [input, I] = useState(""),
     [busy, B] = useState(false),
     [result, R] = useState(null),
     running = useRef(null);
-  function stop() {
-    if (!running.current) return;
-    const { worker, timer } = running.current;
-    worker.terminate();
-    clearTimeout(timer);
-    running.current = null;
-    B(false);
-  }
-  useEffect(
-    () => () => {
-      if (running.current) {
-        clearTimeout(running.current.timer);
-        running.current.worker.terminate();
-      }
-    },
-    [],
-  );
-  function run() {
-    const code = source();
-    if (code.length > 65536) {
-      R({ stderr: "Program exceeds 64 KiB.", exitCode: 1 });
-      return;
-    }
-    stop();
-    R(null);
-    B(true);
-    const worker = new Worker(
-      new URL("./browserRunner.worker.js", import.meta.url),
-      { type: "module" },
-    );
-    const timer = setTimeout(() => {
-      stop();
-      R({ stderr: "Worker deadline exceeded.", exitCode: 124 });
-    }, 15000);
-    running.current = { worker, timer };
-    worker.onmessage = (e) => {
-      stop();
-      R(e.data);
-    };
-    worker.onerror = () => {
-      stop();
-      R({ stderr: "The runtime could not load.", exitCode: 1 });
-    };
-    worker.postMessage({ source: code, input, language });
-  }
-  return (
+  function stop(){running.current?.cancel()}
+  useEffect(()=>()=>{running.current?.cancel();running.current=null},[]);
+  async function run(){R(null);B(true);try{const job=startRun(source(),input,language);running.current=job;const value=await job.result;if(running.current===job)R(value)}catch(e){R({exitCode:1,stderr:e.message})}finally{running.current=null;B(false)}}  return (
     <section className="worktools">
-      <small>Browser runtime · QuickJS · 24 MiB</small>
+      <small>{language==="python"?"Python · Skulpt 1.2":"JavaScript engine · QuickJS"} · 24 MiB guest heap</small>
       <label>
         Standard input
         <textarea
@@ -87,3 +44,4 @@ export default function BrowserRun({ source, language }) {
     </section>
   );
 }
+
