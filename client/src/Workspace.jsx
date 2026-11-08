@@ -1,3 +1,4 @@
+import Landscape from "./Landscape";
 import Landing, { Brand } from "./Landing";
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import {
@@ -82,7 +83,7 @@ function Account({ route }) {
     verifyEmail: "Verify your email",
   }[mode];
   return (
-    <div className="auth-stage">
+    <div className="auth-stage"><div className="workspace-atmosphere" aria-hidden="true"><Landscape/></div>
       <main className="account">
         <a href="/">
           <Brand />

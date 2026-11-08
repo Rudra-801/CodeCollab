@@ -1,3 +1,4 @@
+import Landscape from "./Landscape";
 import { Brand } from "./Landing";
 import CreateWorkspace from "./CreateWorkspace";
 import {
@@ -195,7 +196,7 @@ export default function Dashboard({ user, logout }) {
           </button>
         </div>
       </aside>
-      <div className="work-area">
+      <div className="work-area"><div className="workspace-atmosphere" aria-hidden="true"><Landscape/></div>
         <div className="crumb">
           <span>Workspace</span>
           <ChevronRight size={13} />
@@ -217,7 +218,7 @@ export default function Dashboard({ user, logout }) {
         </div>
         {tab === "notifications" ? (
           <main className="content">
-            <h1>Notifications</h1>
+            <small className="section-kicker">WORKSPACE UPDATES</small><h1>Notifications</h1><p className="page-description">Project activity and team updates, together in one place.</p>
             {notifications.rows?.length ? (
               notifications.rows.map((n) => (
                 <p key={n.id}>
@@ -243,14 +244,14 @@ export default function Dashboard({ user, logout }) {
                 </p>
               ))
             ) : (
-              <p>No notifications yet.</p>
+              <section className="notification-empty"><span aria-hidden="true">◇</span><h2>No notifications yet</h2><p>Your project and team updates will appear here.</p><button className="primary" onClick={()=>{T("work");K("projects");P("")}}>Browse Projects</button></section>
             )}
           </main>
         ) : tab === "settings" ? (
           <main className="content">
-            <h1>Settings</h1>
+            <small className="section-kicker">ACCOUNT SETTINGS</small><h1>Settings</h1><p className="page-description">Manage your account, preferences and workspace experience.</p>
             <Assets uid={user.uid} />
-            <form
+            <form className="preferences-panel"
               onSubmit={(e) => {
                 e.preventDefault();
                 run(async () => {
@@ -259,7 +260,7 @@ export default function Dashboard({ user, logout }) {
                 });
               }}
             >
-              <label>
+              <h2>Preferences</h2><p>Customize your workspace and editor experience.</p><label>
                 Display name
                 <input
                   value={prefs.name}
