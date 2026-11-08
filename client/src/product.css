@@ -1151,3 +1151,45 @@ body{background:#0a0a0a}
 .app-layout .ide.mode-simple{grid-template-columns:minmax(150px,18%) minmax(0,1fr)}
 .ide .worktools{background:#10151d;border-top:1px solid #27313d;max-height:340px;overflow:auto;resize:vertical}
 @media(max-width:800px){.app-layout .ide.mode-simple{grid-template-columns:1fr}.ide-mode-toolbar{flex-wrap:wrap}.app-layout.editing .content:has(.ide){padding:0 8px}.app-layout .ide .editor{height:55vh}}
+
+/* The editor owns its viewport. Surrounding project administration opens in a drawer. */
+.app-layout.editing{height:100dvh;overflow:hidden}
+.app-layout.editing .work-area{height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+.app-layout.editing .crumb{min-height:38px;height:38px;flex-shrink:0}
+.app-layout.editing .content:has(.ide){flex:1;min-height:0;padding:0;display:flex;flex-direction:column}
+.app-layout.editing .content:has(.ide)>button,.app-layout.editing .content:has(.ide)>h2{display:none}
+.app-layout.editing .content:has(.ide)>details,.app-layout.editing .content:has(.ide)>.worktools{display:none}
+.app-layout .ide{flex:1;min-height:0;height:100%;overflow:hidden;border-radius:0;border:0}
+.app-layout .ide>.canvas{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.app-layout .ide>.canvas>nav{flex-shrink:0;height:36px;min-height:36px}
+.app-layout .ide>.canvas>small{padding:5px 12px}
+.editor-stack{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.app-layout .ide .editor{height:auto;min-height:100px;flex:1}
+.editor-stack>small{flex-shrink:0;padding:5px 10px;background:#10151d;font-size:11px}
+.editor-stack>.worktools{flex:0 0 220px;max-height:55vh;min-height:32px;resize:vertical;overflow:auto;margin:0}
+.editor-stack>.worktools:not([open]){flex-basis:32px}
+.editor-stack>.worktools>summary{position:sticky;top:0;background:#10151d;z-index:2;padding:5px;color:#00c8f8}
+.ide>aside,.ide>.chat{min-height:0;overflow:auto}
+.ide-mode-toolbar{min-height:48px;gap:8px;flex-shrink:0}
+.mode-segment{display:flex;background:#080e16;border:1px solid #27313d;border-radius:10px;padding:2px}
+.mode-segment button{border:0;background:transparent}
+.mode-segment button[aria-pressed=true]{background:#3c102b;border:1px solid #ff2d95}
+.ide-mode-toolbar .toolbar-run{background:#00c8f8;color:#041019;font-weight:750}
+.file-context{position:fixed;z-index:100;background:#151d28;border:1px solid #27313d;padding:6px;box-shadow:0 8px 30px #0009;display:grid;min-width:170px}
+.file-context button{text-align:left;border:0}
+.delete-file-action{display:none}
+.app-layout .ide.chat-hidden{grid-template-columns:36px var(--explorer-width) 6px minmax(0,1fr)}
+.chat-hidden>.chat,.chat-hidden>.panel-divider[aria-label="Chat width"]{display:none}
+.app-layout .ide.explorer-hidden{grid-template-columns:36px minmax(0,1fr)}
+.explorer-hidden>aside,.explorer-hidden>.panel-divider{display:none}
+.app-layout .ide.mode-simple.chat-hidden{grid-template-columns:minmax(150px,18%) minmax(0,1fr)}
+.app-layout .ide.mode-simple.explorer-hidden{grid-template-columns:minmax(0,1fr)}
+.workspace-drawer{display:block!important;position:fixed;right:0;top:38px;bottom:0;width:min(440px,100vw);overflow:auto;background:#10151d;border-left:1px solid #00c8f8;padding:20px;z-index:40}
+@media(max-width:800px){.app-layout .ide,.app-layout .ide.mode-simple.chat-hidden,.app-layout .ide.chat-hidden,.app-layout .ide.explorer-hidden{grid-template-columns:minmax(0,1fr)}.ide>aside{max-height:160px}.ide-mode-toolbar{gap:4px;flex-wrap:wrap}.ide-mode-toolbar button{font-size:11px;padding:6px}.ide-mode-toolbar>strong{display:none}.app-layout .ide .editor{height:auto}.editor-stack>.worktools{flex-basis:190px}}
+
+.rename-file-action{display:none}.app-layout.editing .workspace-atmosphere{display:none}.editor-stack>.worktools>h3{display:none}
+.app-layout .ide.mode-simple.chat-hidden{grid-template-columns:minmax(140px,var(--explorer-width)) 6px minmax(0,1fr)}
+.mode-simple>.panel-divider[aria-label="Explorer width"]{display:block}
+.app-layout .ide.mode-simple.explorer-hidden{grid-template-columns:minmax(0,1fr)}
+.mode-simple.explorer-hidden>.panel-divider{display:none}
+@media(max-width:800px){.app-layout .ide.mode-simple.chat-hidden{grid-template-columns:minmax(0,1fr)}.mode-simple>.panel-divider[aria-label="Explorer width"]{display:none}}

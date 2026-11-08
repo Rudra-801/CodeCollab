@@ -486,6 +486,7 @@ export default function Dashboard({ user, logout }) {
                 <Suspense fallback={<p>Loading editor…</p>}>
                   <IDE
                     key={id}
+                    onExit={()=>P("")}
                     project={id}
                     user={user}
                     prefs={prefs}
@@ -494,10 +495,10 @@ export default function Dashboard({ user, logout }) {
                 </Suspense>
               )}
               {kind === "projects" && (
-                <Assets
+                <details className="project-assets"><summary>Project assets</summary><Assets
                   project={id}
                   writable={role !== "viewer" && !resource.archived}
-                />
+                /></details>
               )}
               <details>
                 <summary>Members and workspace settings</summary>

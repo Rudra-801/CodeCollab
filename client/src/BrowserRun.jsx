@@ -4,7 +4,8 @@ export default function BrowserRun({ source, language }) {
     [busy, B] = useState(false),
     [result, R] = useState(null),
     [history, setHistory] = useState([]),
-    running = useRef(null);
+    running = useRef(null), outputRef=useRef(null);
+  useEffect(()=>{if(result)outputRef.current?.scrollIntoView({block:"nearest"})},[result]);
   function stop(){running.current?.cancel()}
   useEffect(()=>()=>{running.current?.cancel();running.current=null},[]);
   async function run(){R(null);B(true);try{const job=startRun(source(),input,language);running.current=job;const value=await job.result;if(running.current===job){R(value);setHistory(items=>[{time:new Date().toLocaleTimeString(),...value},...items].slice(0,10))}}catch(e){R({exitCode:1,stderr:e.message})}finally{running.current=null;B(false)}}  return (
@@ -19,11 +20,11 @@ export default function BrowserRun({ source, language }) {
           onChange={(e) => I(e.target.value)}
         />
       </label>
-      <button disabled={busy} onClick={run}>
+      <button data-run disabled={busy} onClick={run}>
         Run program
       </button>
       {busy && (
-        <button
+        <button data-stop
           onClick={() => {
             stop();
             R({ stderr: "Cancelled", exitCode: 130 });
@@ -33,7 +34,7 @@ export default function BrowserRun({ source, language }) {
         </button>
       )}
       {result && (
-        <div role="status">
+        <div ref={outputRef} role="status">
           <small>
             Exit {result.exitCode}
             {result.elapsedMs != null && " · " + result.elapsedMs + " ms"}

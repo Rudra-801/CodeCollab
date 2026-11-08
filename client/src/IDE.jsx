@@ -120,7 +120,10 @@ function Editor({ path, uid, name, writable, prefs }) {
       C(e.position.lineNumber + ":" + e.position.column),
     );
     instance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, flush);
+    const save=()=>flush();
+    window.addEventListener("codecollab-save",save);
     return () => {
+      window.removeEventListener("codecollab-save",save);
       alive = false;
       flush();
       unsub();
@@ -143,7 +146,7 @@ function Editor({ path, uid, name, writable, prefs }) {
     }
   }, [language, prefs]);
   return (
-    <div>
+    <div className="editor-stack">
       <div ref={container} className="editor" />
       <small role="status">
         {language}　 Ln:Col {cursor}　 UTF-8　 {status}
@@ -153,7 +156,10 @@ function Editor({ path, uid, name, writable, prefs }) {
     </div>
   );
 }
-export default function IDE({ project, user, writable, prefs }) {
+export default function IDE({ project, user, writable, prefs, onExit }) {
+  const [explorerVisible,setExplorerVisible]=useState(true);
+  const [chatVisible,setChatVisible]=useState(false);
+  const [context,setContext]=useState(null);
   const [mode,setMode]=useState(()=>{try{return localStorage.getItem("cc-mode-"+user.uid)||"simple"}catch{return "simple"}});
   function changeMode(next){setMode(next);try{localStorage.setItem("cc-mode-"+user.uid,next)}catch{}}
   const [panels,setPanels]=useState(()=>{
@@ -190,8 +196,18 @@ export default function IDE({ project, user, writable, prefs }) {
     }
   }
   return (
-    <section className={"ide mode-"+mode} style={{"--explorer-width":panels.explorer+"%","--chat-width":panels.chat+"%"}}>
-      <div className="ide-mode-toolbar"><strong>Code workspace</strong><div role="group" aria-label="Editor mode"><button aria-pressed={mode==="simple"} onClick={()=>changeMode("simple")}>Simple</button><button aria-pressed={mode==="pro"} onClick={()=>changeMode("pro")}>Pro</button></div><button onClick={e=>{const tools=e.currentTarget.closest(".ide").querySelector(".worktools");if(tools){tools.open=true;tools.scrollIntoView({block:"nearest"});tools.querySelector("button")?.focus()}}}>Run / Output</button></div>
+    <section className={"ide mode-"+mode+(!explorerVisible?" explorer-hidden":"")+(!chatVisible?" chat-hidden":"")} style={{"--explorer-width":panels.explorer+"%","--chat-width":panels.chat+"%"}}>
+      <div className="ide-mode-toolbar">
+        <button title="Toggle Explorer" onClick={()=>setExplorerVisible(v=>!v)}><Files size={16}/></button>
+        <button onClick={onExit}>Workspaces</button><strong>{file?.name || "Code workspace"}</strong>
+        <div className="mode-segment" role="group" aria-label="Editor mode"><button aria-pressed={mode==="simple"} onClick={()=>changeMode("simple")}>Simple</button><button aria-pressed={mode==="pro"} onClick={()=>changeMode("pro")}>Pro</button></div>
+        <button className="toolbar-run" onClick={e=>{const root=e.currentTarget.closest(".ide");root.querySelector(".worktools").open=true;root.querySelector(".worktools button[data-run]")?.click()}}>▶ Run</button>
+        <button onClick={e=>e.currentTarget.closest(".ide").querySelector(".worktools [data-stop]")?.click()}>Stop</button>
+        <button onClick={()=>window.dispatchEvent(new Event("codecollab-save"))}>Save</button>
+        <button onClick={()=>{const section=document.querySelector(".content>details");if(section){section.open=true;section.classList.add("workspace-drawer")}}}>Share / Settings</button>
+        <button onClick={()=>setChatVisible(v=>!v)}>Chat</button>
+        <button onClick={e=>{const tools=e.currentTarget.closest(".ide").querySelector(".worktools");tools.open=!tools.open}}>Output</button>
+      </div>
       <nav className="activity-rail" aria-label="Editor navigation">
         <button
           aria-label="Focus file explorer"
@@ -247,6 +263,7 @@ export default function IDE({ project, user, writable, prefs }) {
           .map((f) => (
             <button
               key={f.id}
+              onContextMenu={e=>{e.preventDefault();A(f.id);setContext({x:Math.min(e.clientX,innerWidth-180),y:Math.min(e.clientY,innerHeight-140),file:f})}}
               aria-pressed={file?.id === f.id}
               onClick={() => A(f.id)}
             >
@@ -275,7 +292,7 @@ export default function IDE({ project, user, writable, prefs }) {
               + File
             </button>
             {file && (
-              <button
+              <button className="rename-file-action"
                 onClick={() => {
                   const name = prompt("Rename file", file.name);
                   if (name)
@@ -288,7 +305,7 @@ export default function IDE({ project, user, writable, prefs }) {
               </button>
             )}
             {file && (
-              <button
+              <button className="delete-file-action"
                 onClick={() => {
                   if (
                     confirm(
@@ -391,6 +408,11 @@ export default function IDE({ project, user, writable, prefs }) {
           <button>Send</button>
         </form>
       </details>
+      {context&&<div className="file-context" role="menu" style={{left:context.x,top:context.y}} onKeyDown={e=>{if(e.key==="Escape")setContext(null)}}>
+        <button autoFocus role="menuitem" onClick={()=>{const name=prompt("Rename file",context.file.name);if(name)run(()=>updateDoc(doc(db,base+"/files/"+context.file.id),{name}));setContext(null)}}>Rename file</button>
+        <button role="menuitem" onClick={()=>{setContext(null);document.querySelector(".ide aside .delete-file-action")?.click()}}>Delete file…</button>
+        <button role="menuitem" onClick={()=>setContext(null)}>Close menu</button>
+      </div>}
       <p role="alert">{error || files.error || chat.error}</p>
     </section>
   );

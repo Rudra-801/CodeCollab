@@ -33,7 +33,16 @@ try {
   await expect(page.locator(".ide")).toHaveClass(/mode-simple/);
   await page.reload();
   await openSaved();
+  await page.getByRole("button",{name:"▶ Run",exact:true}).click();
+  await expect(page.locator(".worktools [role=status]")).toContainText("guest-draft-42",{timeout:20000});
   if(process.env.CAPTURE_UI){
+    for(const width of [1920,1440,1366,768,390]){
+      await page.setViewportSize({width,height:900});
+      await page.screenshot({path:"qa/deployed/ide-viewport-"+width+".png"});
+      if(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)>1)throw Error("IDE horizontal overflow");
+    }
+
+    await page.getByRole("button",{name:"Workspaces",exact:true}).click();
     await page.getByRole("button",{name:"Settings",exact:true}).click();
     for(const width of [1920,1440,1366,768,390]){
       await page.setViewportSize({width,height:900});
