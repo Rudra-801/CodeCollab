@@ -1193,3 +1193,8 @@ body{background:#0a0a0a}
 .app-layout .ide.mode-simple.explorer-hidden{grid-template-columns:minmax(0,1fr)}
 .mode-simple.explorer-hidden>.panel-divider{display:none}
 @media(max-width:800px){.app-layout .ide.mode-simple.chat-hidden{grid-template-columns:minmax(0,1fr)}.mode-simple>.panel-divider[aria-label="Explorer width"]{display:none}}
+
+.tool-tabs{display:flex;align-items:center;gap:5px;min-height:34px;position:sticky;top:28px;background:#10151d;z-index:2;border-bottom:1px solid #27313d;padding:2px 6px;flex-wrap:wrap}
+.tool-tabs button{border:0;border-radius:0;background:transparent;padding:7px 10px}
+.tool-tabs button[aria-pressed=true]{color:#00c8f8;border-bottom:2px solid #00c8f8}
+.worktools [hidden]{display:none!important}

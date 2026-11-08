@@ -35,6 +35,12 @@ try {
   await openSaved();
   await page.getByRole("button",{name:"▶ Run",exact:true}).click();
   await expect(page.locator(".worktools [role=status]")).toContainText("guest-draft-42",{timeout:20000});
+  await page.getByRole("button",{name:"Tests",exact:true}).click();
+  await page.getByText("Test cases (1)").click();
+  await page.getByLabel("Expected output").fill("guest-draft-42");
+  await page.getByRole("button",{name:"Run all cases",exact:true}).click();
+  await expect(page.getByText("Passed",{exact:true})).toBeVisible({timeout:20000});
+  await page.getByRole("navigation",{name:"Workspace panels"}).getByRole("button",{name:"Output",exact:true}).click();
   if(process.env.CAPTURE_UI){
     for(const width of [1920,1440,1366,768,390]){
       await page.setViewportSize({width,height:900});

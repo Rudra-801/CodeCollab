@@ -1,3 +1,4 @@
+import Cases from "./Cases";
 import GitPanel from "./GitPanel";
 import HtmlPreview from "./HtmlPreview";
 import BrowserRun from "./BrowserRun";
@@ -20,6 +21,7 @@ export const languageFor = (name) =>
   languages[name.split(".").pop()] || "plaintext";
 export default function Tools({ editor, path, name }) {
   const project = path.split("/")[1],
+    [panel,setPanel] = useState("output"),
     [job, J] = useState(""),
     [input, I] = useState(""),
     [output, O] = useState(null),
@@ -67,8 +69,12 @@ export default function Tools({ editor, path, name }) {
     }
   }
   return (
-    <details className="worktools" open>
-      <summary>Execution and code assistance</summary>
+    <details className="worktools" open onClickCapture={e=>{if(e.target.closest("[data-run]"))setPanel("output")}}>
+      <summary>Workspace panel</summary>
+      <nav className="tool-tabs" aria-label="Workspace panels">
+        {[["output","Output"],["tests","Tests"],["git","Source Control"],["ai","AI Assistant"]].map(([id,label])=><button type="button" key={id} aria-pressed={panel===id} onClick={()=>setPanel(id)}>{label}</button>)}
+      </nav>
+      <div hidden={panel!=="output"}>
       <h3>Run {name}</h3>
       {/\.html?$/i.test(name) && <HtmlPreview editor={editor} />}
       {["python", "javascript", "typescript"].includes(lang) ? (
@@ -117,7 +123,10 @@ export default function Tools({ editor, path, name }) {
             : "Execution provider is unconfigured."}
         </p>
       )}
-      <GitPanel project={project} editor={editor} />
+      </div>
+      <div hidden={panel!=="tests"}>{["python","javascript","typescript"].includes(lang)?<Cases language={lang} source={()=>editor.current.model.getValue()}/>:<p>No test runtime is configured for this file.</p>}</div>
+      <div hidden={panel!=="git"}><GitPanel project={project} editor={editor}/></div>
+      <div hidden={panel!=="ai"}><p>The selected code is sent to the configured AI provider when you choose Send selection.</p>
       <h3>Ask about selected code</h3>
       {ai ? (
         <>
@@ -137,7 +146,7 @@ export default function Tools({ editor, path, name }) {
       ) : (
         <p>AI provider is unconfigured.</p>
       )}
-      <p role="alert">{err}</p>
+      </div><p role="alert">{err}</p>
     </details>
   );
 }
