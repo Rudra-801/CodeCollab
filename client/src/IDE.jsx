@@ -1,3 +1,4 @@
+import {Brand} from "./Landing";
 import { Files, Search, MessageSquare } from "lucide-react";
 import PanelDivider from "./PanelDivider";
 import Tools, { languageFor } from "./Tools";
@@ -198,7 +199,7 @@ export default function IDE({ project, user, writable, prefs, onExit }) {
   }
   return (
     <section className={"ide mode-"+mode+(!explorerVisible?" explorer-hidden":"")+(!chatVisible?" chat-hidden":"")} style={{"--explorer-width":panels.explorer+"%","--chat-width":panels.chat+"%"}}>
-      <div className="ide-mode-toolbar">
+      <div className="ide-mode-toolbar"><a href="#" aria-label="CodeCollab home"><Brand/></a>
         <button title="Toggle Explorer" onClick={()=>setExplorerVisible(v=>!v)}><Files size={16}/></button>
         <button onClick={onExit}>Workspaces</button><strong>{file?.name || "Code workspace"}</strong>
         <div className="mode-segment" role="group" aria-label="Editor mode"><button aria-pressed={mode==="simple"} onClick={()=>changeMode("simple")}>Simple</button><button aria-pressed={mode==="pro"} onClick={()=>changeMode("pro")}>Pro</button></div>

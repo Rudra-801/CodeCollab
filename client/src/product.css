@@ -1198,3 +1198,9 @@ body{background:#0a0a0a}
 .tool-tabs button{border:0;border-radius:0;background:transparent;padding:7px 10px}
 .tool-tabs button[aria-pressed=true]{color:#00c8f8;border-bottom:2px solid #00c8f8}
 .worktools [hidden]{display:none!important}
+
+.cc-brand .brand-icon{width:36px;height:36px;object-fit:contain;flex-shrink:0;border-radius:6px}
+.cc-brand .brand-wordmark{width:150px;height:auto;max-height:28px;object-fit:contain}
+.ide-mode-toolbar .cc-brand{gap:5px}.ide-mode-toolbar .brand-icon{width:28px;height:28px}
+.ide-mode-toolbar .brand-wordmark{width:110px}
+@media(max-width:600px){.ide-mode-toolbar .brand-wordmark{display:none}.cc-brand .brand-wordmark{width:125px}}

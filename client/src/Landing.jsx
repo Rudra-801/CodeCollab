@@ -25,10 +25,8 @@ import {
 export function Brand() {
   return (
     <span className="cc-brand">
-      <span className="cc-mark">
-        <Braces size={19} />
-      </span>
-      CodeCollab
+      <img className="brand-icon" src="/codecollab-icon-192.png" width="36" height="36" alt=""/>
+      <img className="brand-wordmark" src="/codecollab-wordmark.webp" width="150" height="24" alt="CodeCollab"/>
     </span>
   );
 }
