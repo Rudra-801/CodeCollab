@@ -83,6 +83,8 @@ export default function Dashboard({ user, logout }) {
       new URLSearchParams(location.search).get("invite") || "",
     ),
     [notice, N] = useState(""),
+    [success, setSuccess] = useState(""),
+    [savingPreferences, setSavingPreferences] = useState(false),
     [tab, T] = useState("work"),
     [prefs, F] = useState({
       name: "",
@@ -132,6 +134,14 @@ export default function Dashboard({ user, logout }) {
       N(e.message);
     }
   }
+  useEffect(()=>{
+    setSuccess("");
+  },[tab]);
+  useEffect(()=>{
+    if(!success)return;
+    const timer=setTimeout(()=>setSuccess(""),5000);
+    return ()=>clearTimeout(timer);
+  },[success]);
   const act = (action, extra = {}) => command({ action, kind, id, ...extra });
   const teamProjects = useRows(
     kind === "teams" && base ? base + "/projects" : null,
@@ -166,6 +176,8 @@ export default function Dashboard({ user, logout }) {
           ].map(([Icon, label, go]) => (
             <button
               key={label}
+              title={label}
+              aria-label={label === "Notifications" ? "Notifications ("+(notifications.rows?.filter(n=>!n.read).length||0)+")" : label}
               aria-current={
                 (label === "Dashboard" &&
                   tab === "work" &&
@@ -213,6 +225,7 @@ export default function Dashboard({ user, logout }) {
             }}
           />
         )}
+        <div className="success-toast" role="status" aria-live="polite">{success}</div>
         <div role="alert">
           {notice || index.error || members.error || activity.error}
         </div>
@@ -254,8 +267,12 @@ export default function Dashboard({ user, logout }) {
               onSubmit={(e) => {
                 e.preventDefault();
                 run(async () => {
-                  await setDoc(doc(db, "users", user.uid), prefs);
-                  N("Preferences saved.");
+                  setSavingPreferences(true);
+                  setSuccess("");
+                  try {
+                    await setDoc(doc(db, "users", user.uid), prefs);
+                    setSuccess("Preferences saved.");
+                  } finally {setSavingPreferences(false);}
                 });
               }}
             >
@@ -269,7 +286,7 @@ export default function Dashboard({ user, logout }) {
               </label>
               <label>
                 Editor theme
-                <select
+                <select aria-label="Editor theme"
                   value={prefs.theme}
                   onChange={(e) => F({ ...prefs, theme: e.target.value })}
                 >
@@ -287,7 +304,7 @@ export default function Dashboard({ user, logout }) {
                   {k}
                 </label>
               ))}
-              <button>Save preferences</button>
+              <button disabled={savingPreferences}>{savingPreferences?"Saving preferences...":"Save preferences"}</button>
             </form><div className="settings-account"><section className="settings-card"><h2>Account</h2><p>Your account and security settings.</p><p>{user.email}</p>
             {!user.emailVerified && (
               <button

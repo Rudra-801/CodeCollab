@@ -50,8 +50,20 @@ try {
 
     await page.getByRole("button",{name:"Workspaces",exact:true}).click();
     await page.getByRole("button",{name:"Settings",exact:true}).click();
-    for(const width of [1920,1440,1366,768,390]){
-      await page.setViewportSize({width,height:900});
+    await page.getByLabel("Display name",{exact:true}).fill("Settings QA");
+    await page.getByLabel("Editor theme",{exact:true}).selectOption("hc-black");
+    await page.getByLabel("minimap",{exact:true}).check();
+    await page.getByLabel("notifications",{exact:true}).uncheck();
+    await page.getByRole("button",{name:"Save preferences",exact:true}).click();
+    await expect(page.locator(".success-toast")).toHaveText("Preferences saved.");
+    await page.reload();
+    await page.getByRole("button",{name:"Settings",exact:true}).click();
+    await expect(page.getByLabel("Display name",{exact:true})).toHaveValue("Settings QA");
+    await expect(page.getByLabel("Editor theme",{exact:true})).toHaveValue("hc-black");
+    await expect(page.getByLabel("minimap",{exact:true})).toBeChecked();
+    await expect(page.getByLabel("notifications",{exact:true})).not.toBeChecked();
+    for(const [width,height] of [[1920,1080],[1440,900],[1366,768],[1024,768],[881,741],[768,1024],[390,844],[360,800]]){
+      await page.setViewportSize({width,height});
       await page.screenshot({path:"qa/deployed/settings-review-"+width+".png"});
       const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
       if(overflow>1)throw Error("Settings overflow "+width);
