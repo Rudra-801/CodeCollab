@@ -87,8 +87,8 @@ exports.runner = onCall(
         fail("internal", "Execution provider returned an invalid result.");
       return {
         exitCode,
-        stdout: await read("stdout.txt"),
-        stderr: await read("stderr.txt"),
+        stdout: (await read("stdout.txt")).slice(0,32768),
+        stderr: (await read("stderr.txt")).slice(0,32768),
         elapsedMs: Date.now() - started,
       };
     } finally {
