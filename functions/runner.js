@@ -23,6 +23,8 @@ exports.runner = onCall(
       { source, stdin = "", language, job, action } = req.data;
     if (typeof job !== "string" || !/^[-\w]{16,64}$/.test(job))
       fail("invalid-argument", "Invalid job.");
+    if (action !== undefined && action !== "stop")
+      fail("invalid-argument", "Unsupported execution action.");
     const ref = getFirestore().doc("executionQuotas/" + uid);
     if (!process.env.E2B_API_KEY || !process.env.E2B_TEMPLATE)
       fail("failed-precondition", "Execution provider is unconfigured.");
@@ -80,8 +82,11 @@ exports.runner = onCall(
             timeoutMs: 2000,
           })
         ).stdout;
+      const exitCode = Number(run.stdout.trim());
+      if (!/^\d{1,3}$/.test(run.stdout.trim()) || !Number.isInteger(exitCode) || exitCode > 255)
+        fail("internal", "Execution provider returned an invalid result.");
       return {
-        exitCode: Number(run.stdout.trim()),
+        exitCode,
         stdout: await read("stdout.txt"),
         stderr: await read("stderr.txt"),
         elapsedMs: Date.now() - started,

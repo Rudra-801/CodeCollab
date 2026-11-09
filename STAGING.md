@@ -20,3 +20,16 @@ Hosting returned HTTP 200, rendered the landing page and opened login. Playwrigh
 No production deployment was performed.
 
 - Bind optional provider secrets via Firebase Secret Manager. For the corresponding Functions deployment, set CODECOLLAB_ENABLE_RUNNER, CODECOLLAB_ENABLE_AI or CODECOLLAB_ENABLE_GITHUB to true in the backend environment only after provisioning the named secrets. Keep browser feature switches disabled until the staging acceptance checks pass.
+
+
+## Read-only infrastructure verification, 2026-11-09
+
+Cloud Billing reports billingEnabled=false for codecollab-rudra. Enable Blaze through Firebase Console > Usage and billing when the owner is ready to authorize billing. Backend deployment has not been retried while billing is disabled. Default Firebase Storage bucket lookup returns HTTP 404. After billing setup, use Storage > Get started to provision the intended bucket, copy its actual name into VITE_FIREBASE_STORAGE_BUCKET, rebuild, deploy reviewed Storage rules and run upload/download authorization tests.
+
+The Google sign-in provider reports enabled=true. Authorized domains include localhost, codecollab-rudra.firebaseapp.com and codecollab-rudra.web.app. A real interactive Google login is still unverified. Do not report Google production sign-in PASS from configuration alone.
+
+Hosted execution requires server-side E2B_API_KEY, E2B_TEMPLATE and CODECOLLAB_ENABLE_RUNNER=true. The template build script is functions/sandbox/build.js. Review the template and test real isolation and all runtimes before enabling VITE_EXECUTION_ENABLED=true. This adapter currently handles single-file execution, not persistent interactive workspaces or authenticated full-stack preview routing.
+
+AI requires GEMINI_API_KEY, GEMINI_MODEL and CODECOLLAB_ENABLE_AI=true on the trusted backend. The request includes an instruction to treat repository context as untrusted data. This instruction is a mitigation, not a security boundary. Suggestions remain read-only. Real provider responses are unverified.
+
+GitHub uses device authorization. Enable device flow on the GitHub App and install it only on intended repositories with Contents read/write and Metadata read permissions. This implementation does not require an OAuth redirect callback or webhook. Supply GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET, a random 32-byte base64 GITHUB_TOKEN_KEY and CODECOLLAB_ENABLE_GITHUB=true through server-side configuration/secret management. Do not invent a callback URL for this device-flow implementation. The current broker handles individual file import and SHA-checked commits, not a complete multi-file Git working tree.

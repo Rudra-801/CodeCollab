@@ -64,6 +64,7 @@ async function session(n) {
     db,
     auth,
     storage,
+    tool: async (name,data) => (await httpsCallable(fn,name)(data)).data,
     cmd: async (data) => (await httpsCallable(fn, "workspace")(data)).data,
   };
 }
@@ -72,6 +73,12 @@ async function test() {
     b = await session("viewer"),
     c = await session("outsider");
   const { id } = await a.cmd({ action: "create", name: "Integration" });
+  for (const name of ["runner","assistant"]) {
+    await assert.rejects(c.tool(name,{project:id,job:crypto.randomUUID(),question:"Explain",context:"print(1)"}),error=>error.code==="functions/permission-denied");
+    await assert.rejects(a.tool(name,{project:id,job:crypto.randomUUID(),question:"Explain",context:"print(1)"}),error=>error.code==="functions/failed-precondition");
+  }
+  await assert.rejects(a.tool("github",{action:"status"}),error=>error.code==="functions/failed-precondition");
+  console.log("PASS emulator tool authorization and fail-closed provider configuration");
   const action = (action, args = {}) => a.cmd({ action, id, ...args });
   const { code } = await action("invite", { role: "viewer" });
   await b.cmd({ action: "join", code });
