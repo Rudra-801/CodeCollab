@@ -31,7 +31,9 @@ export function connectPresence(doc, path, onPeers) {
     try {
       const token = await auth.currentUser.getIdToken();
       if (closed) return;
-      socket = new WebSocket(import.meta.env.VITE_PRESENCE_URL);
+      const endpoint=new URL(import.meta.env.VITE_PRESENCE_URL);
+      if(endpoint.pathname==="/presence"){endpoint.searchParams.set("project",project);endpoint.searchParams.set("file",file);}
+      socket = new WebSocket(endpoint);
       socket.onopen = () =>
         socket.send(
           JSON.stringify({ token, project, file, client: doc.clientID }),

@@ -11,3 +11,9 @@ dist/
 *-debug.log*
 desktop.ini
 *.zip
+
+**/.dev.vars
+**/.dev.vars.*
+**/.wrangler/
+
+client/dist-ai-qa/

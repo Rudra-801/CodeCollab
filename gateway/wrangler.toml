@@ -1,0 +1,20 @@
+name = "codecollab-ai"
+main = "worker.mjs"
+compatibility_date = "2026-11-09"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://codecollab-rudra.web.app"
+AI_FALLBACK_ORDER = "groq,openrouter,gemini"
+
+[[durable_objects.bindings]]
+name = "QUOTAS"
+class_name = "Quota"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Quota","PresenceRoom"]
+
+[[durable_objects.bindings]]
+name = "PRESENCE"
+class_name = "PresenceRoom"

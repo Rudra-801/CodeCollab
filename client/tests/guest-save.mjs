@@ -41,6 +41,27 @@ try {
   await page.getByRole("button",{name:"Run all cases",exact:true}).click();
   await expect(page.getByText("Passed",{exact:true})).toBeVisible({timeout:20000});
   await page.getByRole("navigation",{name:"Workspace panels"}).getByRole("button",{name:"Output",exact:true}).click();
+  if(process.env.AI_MOCK){
+    await page.route("https://codecollab-ai-test.invalid/**",async route=>{
+      const body=route.request().postDataJSON();
+      if(body.action==="models")return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({providers:[{provider:"groq",models:["test-current-model"]}]})});
+      await route.fulfill({status:200,contentType:"text/event-stream",body:"data: "+JSON.stringify({text:"Review this replacement.\n"+String.fromCharCode(96).repeat(3)+"python\nprint('reviewed-ai-code')\n"+String.fromCharCode(96).repeat(3)})+"\n\ndata: "+JSON.stringify({done:true})+"\n\n"});
+    });
+    await page.getByRole("button",{name:"AI Assistant",exact:true}).click();
+    await page.getByRole("button",{name:"Load available models",exact:true}).click();
+    await page.getByLabel("Provider",{exact:true}).selectOption("groq");
+    await page.getByLabel("Model",{exact:true}).selectOption("test-current-model");
+    await page.getByLabel("Question",{exact:true}).fill("Refactor this file");
+    await page.getByRole("button",{name:"Send selected context",exact:true}).click();
+    await expect(page.getByRole("heading",{name:"Review full-file replacement"})).toBeVisible();
+    await expect(page.locator(".canvas>.editor-stack>.editor .view-lines")).toContainText("guest-draft-42");
+    await page.getByRole("button",{name:"Apply reviewed replacement",exact:true}).click();
+    await expect(page.locator(".canvas>.editor-stack>.editor .view-lines")).toContainText("reviewed-ai-code");
+    await page.locator(".canvas>.editor-stack>.editor").click();
+    await page.keyboard.press("Control+z");
+    await expect(page.locator(".canvas>.editor-stack>.editor .view-lines")).toContainText("guest-draft-42");
+    console.log("PASS mocked AI streaming UI, provider/model selection, diff approval and undo");
+  }
   if(process.env.CAPTURE_UI){
     for(const width of [1920,1440,1366,768,390]){
       await page.setViewportSize({width,height:900});

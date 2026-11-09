@@ -1,3 +1,4 @@
+import Assistant from "./Assistant";
 import Cases from "./Cases";
 import GitPanel from "./GitPanel";
 import HtmlPreview from "./HtmlPreview";
@@ -25,13 +26,9 @@ export default function Tools({ editor, path, name }) {
     [job, J] = useState(""),
     [input, I] = useState(""),
     [output, O] = useState(null),
-    [err, E] = useState(""),
-    [question, Q] = useState(""),
-    [answer, A] = useState(""),
-    [pending, P] = useState(false);
+    [err, E] = useState("");
   const lang = languageFor(name),
-    execution = import.meta.env.VITE_EXECUTION_ENABLED === "true",
-    ai = import.meta.env.VITE_AI_ENABLED === "true";
+    execution = import.meta.env.VITE_EXECUTION_ENABLED === "true";
   async function run() {
     const id = crypto.randomUUID();
     J(id);
@@ -51,21 +48,6 @@ export default function Tools({ editor, path, name }) {
       E(e.message);
     } finally {
       J("");
-    }
-  }
-  async function ask() {
-    P(true);
-    A("");
-    E("");
-    try {
-      const model = editor.current.model,
-        selection = editor.current.instance.getSelection(),
-        context = model.getValueInRange(selection);
-      A((await invokeTool("assistant", { project, question, context })).answer);
-    } catch (e) {
-      E(e.message);
-    } finally {
-      P(false);
     }
   }
   return (
@@ -126,27 +108,7 @@ export default function Tools({ editor, path, name }) {
       </div>
       <div hidden={panel!=="tests"}>{["python","javascript","typescript"].includes(lang)?<Cases language={lang} source={()=>editor.current.model.getValue()}/>:<p>No test runtime is configured for this file.</p>}</div>
       <div hidden={panel!=="git"}><GitPanel project={project} editor={editor}/></div>
-      <div hidden={panel!=="ai"}><p>The selected code is sent to the configured AI provider when you choose Send selection.</p>
-      <h3>Ask about selected code</h3>
-      {ai ? (
-        <>
-          <label>
-            Question
-            <textarea
-              value={question}
-              onChange={(e) => Q(e.target.value)}
-              maxLength={2000}
-            />
-          </label>
-          <button disabled={pending || !question.trim()} onClick={ask}>
-            Send selection
-          </button>
-          <pre>{answer}</pre>
-        </>
-      ) : (
-        <p>AI provider is unconfigured.</p>
-      )}
-      </div><p role="alert">{err}</p>
+      <div hidden={panel!=="ai"}><Assistant project={project} editor={editor}/>      </div><p role="alert">{err}</p>
     </details>
   );
 }

@@ -1,3 +1,5 @@
+> Current deployment constraint: free infrastructure only. Firebase remains on Spark. Do not activate Blaze or provision paid services. The optional AI and awareness gateway is documented in gateway/README.md and targets Cloudflare Workers Free. Earlier Blaze/E2B deployment notes below are historical and are not the current deployment instructions.
+
 # Staging release
 
 The dedicated Firebase project is codecollab-rudra (project number 889266469859). The staging alias is recorded in .firebaserc. The default Firestore database is in us-central1, colocated with the callable Functions region. Hosting serves https://codecollab-rudra.web.app.
