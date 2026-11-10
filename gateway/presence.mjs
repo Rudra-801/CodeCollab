@@ -13,7 +13,7 @@ export class PresenceRoom {
     const deadline=setTimeout(()=>{if(!peer.uid)socket.close(1008,"Authentication required")},8000);
     const lifetime=setTimeout(()=>socket.close(1000,"Reconnect to renew session"),300000);
     const close=()=>{
-      clearTimeout(deadline);clearTimeout(lifetime);
+      clearTimeout(deadline);clearTimeout(lifetime);clearTimeout(peer.publishTimer);
       if(this.peers.delete(socket))this.publish().catch(()=>{});
     };
     socket.addEventListener("close",close);socket.addEventListener("error",close);
@@ -29,10 +29,14 @@ export class PresenceRoom {
           if(!await this.allowed(peer))throw Error();
           clearTimeout(deadline);socket.send(JSON.stringify({ready:true}));
         }else{
-          if(Date.now()-peer.last<750)return;
           const selection=data.selection;
           if(selection!=null&&(!selection.anchor||!selection.head||JSON.stringify(selection).length>1500))throw Error();
           peer.selection=selection||null;
+          if(Date.now()-peer.last<750){
+            clearTimeout(peer.publishTimer);
+            peer.publishTimer=setTimeout(()=>this.publish().catch(()=>{socket.close(1011);close();}),750);
+            return;
+          }
         }
         peer.last=Date.now();await this.publish();
       }catch{socket.close(1008,"Session or access expired");close();}

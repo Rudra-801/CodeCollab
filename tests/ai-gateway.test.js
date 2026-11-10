@@ -95,3 +95,26 @@ test("configured fallback order is honored",async()=>{
  await generate({...env,AI_FALLBACK_ORDER:"gemini,groq"},{question:"x",context:""},x=>received.push(x),new AbortController().signal,providerFetch());
  assert.equal(received[0].provider,"gemini");
 });
+test("presence keeps the last cursor update inside the throttle window",async()=>{
+ const {PresenceRoom}=await import("../gateway/presence.mjs");
+ const originals={fetch:global.fetch,Response:global.Response,WebSocketPair:global.WebSocketPair};
+ const handlers={};let broadcasts=0;
+ const socket={accept(){},addEventListener(name,fn){handlers[name]=fn},send(message){if(JSON.parse(message).peers)broadcasts++},close(){}};
+ global.WebSocketPair=class{constructor(){this[0]={};this[1]=socket;}};
+ global.Response=class{constructor(body,options){this.status=options.status;}};
+ global.fetch=async url=>url.includes("accounts:lookup")?originals.Response.json({users:[{localId:"user"}]}):new originals.Response("",{status:200});
+ try{
+  const room=new PresenceRoom({},{FIREBASE_WEB_API_KEY:"public-config"});
+  await room.fetch(new Request("https://gateway/presence?project=p&file=f",{headers:{Upgrade:"websocket"}}));
+  await handlers.message({data:JSON.stringify({token:"valid",project:"p",file:"f",client:1})});
+  const selection={anchor:{index:7},head:{index:8}};
+  await handlers.message({data:JSON.stringify({selection})});
+  assert.deepEqual(room.peers.get(socket).selection,selection);
+  const initial=broadcasts;
+  await new Promise(resolve=>setTimeout(resolve,820));
+  assert.ok(broadcasts>initial);
+ }finally{
+  handlers.close?.();
+  global.fetch=originals.fetch;global.Response=originals.Response;global.WebSocketPair=originals.WebSocketPair;
+ }
+});
