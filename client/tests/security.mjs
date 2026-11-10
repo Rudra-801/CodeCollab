@@ -1,3 +1,4 @@
+import {projectInvitation} from "../src/projectInvitations.js";
 import { createPersonalProject } from "../src/createPersonalProject.js";
 import assert from "node:assert/strict";
 import { initializeApp } from "firebase/app";
@@ -14,7 +15,7 @@ import {
   verifyPasswordResetCode,
 } from "firebase/auth";
 import {
-  collection, getDocs, getFirestore,
+  collection, updateDoc, Timestamp, getDocs, getFirestore,
   connectFirestoreEmulator,
   doc,
   setDoc,
@@ -89,6 +90,19 @@ async function test() {
     "Personal workspace",
     {name: "main.py", source: "print(42)"},
   );
+  const publicInvite=await projectInvitation(a.db,a.uid,{action:"invite",id:personal.id,role:"editor"});
+  await projectInvitation(c.db,c.uid,{action:"join",code:publicInvite.code});
+  const granted=await getDoc(doc(c.db,"projects",personal.id,"members",c.uid));
+  assert.equal(granted.get("role"),"editor");
+  await assert.rejects(projectInvitation(b.db,b.uid,{action:"join",code:publicInvite.code}));
+  await assert.rejects(updateDoc(doc(b.db,"projectInvitations",granted.get("invitation")),{usedBy:b.uid,redeemedAt:serverTimestamp()}));
+  await assert.rejects(updateDoc(doc(c.db,"projects",personal.id,"members",c.uid),{role:"owner"}));
+  const revokedInvite=await projectInvitation(a.db,a.uid,{action:"invite",id:personal.id,role:"viewer"});
+  await projectInvitation(a.db,a.uid,{action:"revoke",code:revokedInvite.code});
+  await assert.rejects(projectInvitation(b.db,b.uid,{action:"join",code:revokedInvite.code}));
+  await assert.rejects(setDoc(doc(a.db,"projectInvitations","forged-admin"),{project:personal.id,role:"admin",createdBy:a.uid,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+86400000),revoked:false,usedBy:""}));
+  await assert.rejects(setDoc(doc(a.db,"projectInvitations","expired"),{project:personal.id,role:"viewer",createdBy:a.uid,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()-1000),revoked:false,usedBy:""}));
+  console.log("PASS rules-enforced project invitations, replay rejection, revocation, expiry and role escalation denial");
   const files = await getDocs(collection(a.db, "projects", personal.id, "files"));
   assert.equal(files.size, 1);
   assert.equal(files.docs[0].get("name"), "main.py");

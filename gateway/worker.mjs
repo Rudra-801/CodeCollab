@@ -21,6 +21,8 @@ export class Quota {
 }
 export default {
   async fetch(request,env,ctx) {
+    if(new URL(request.url).pathname==="/health" && request.method==="GET")
+      return json({service:"CodeCollab gateway",presence:!!env.PRESENCE,ai:configurations(env).length>0});
     const origin=request.headers.get("Origin");
     const allowed=(env.ALLOWED_ORIGINS||"https://codecollab-rudra.web.app").split(",").map(x=>x.trim());
     if(!origin||!allowed.includes(origin))return json({error:"Origin denied."},403);

@@ -1,3 +1,4 @@
+import {projectInvitation} from "./projectInvitations";
 import { initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
@@ -40,7 +41,9 @@ const starters = {
  typescript:{name:"main.ts",source:'const name: string = readline() || "world";\nconsole.log("Hello, " + name + "!");'}
 };
 export const command = async (data) =>
-  data.action === "create" && data.kind === "projects"
+  ((data.kind==="projects"&&data.action==="invite")||(["join","revoke"].includes(data.action)&&data.code?.startsWith("ccp_")))
+    ? projectInvitation(db,auth.currentUser.uid,data)
+    : data.action === "create" && data.kind === "projects"
     ? createPersonalProject(db, auth.currentUser.uid, data.name, starters[data.template])
     : (await httpsCallable(functions, "workspace")(data)).data;
 
