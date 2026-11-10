@@ -118,3 +118,8 @@ test("presence keeps the last cursor update inside the throttle window",async()=
   global.fetch=originals.fetch;global.Response=originals.Response;global.WebSocketPair=originals.WebSocketPair;
  }
 });
+test("model discovery supports configured keys without fixed model IDs",async()=>{
+ const {catalog}=await import("../gateway/providers.mjs");
+ const result=await catalog({GROQ_API_KEY:"test"},new AbortController().signal,providerFetch());
+ assert.equal(result[0].models[0],"active-groq");
+});

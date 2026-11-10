@@ -206,7 +206,7 @@ export default function IDE({ project, user, writable, prefs, onExit }) {
         <button className="toolbar-run" onClick={e=>{const root=e.currentTarget.closest(".ide");root.querySelector(".worktools").open=true;root.querySelector(".worktools button[data-run]")?.click()}}>▶ Run</button>
         <button onClick={e=>e.currentTarget.closest(".ide").querySelector(".worktools [data-stop]")?.click()}>Stop</button>
         <button onClick={()=>window.dispatchEvent(new Event("codecollab-save"))}>Save</button>
-        <button onClick={()=>{const section=document.querySelector(".content>details");if(section){section.open=true;section.classList.add("workspace-drawer")}}}>Share / Settings</button>
+        <button onClick={()=>{const section=document.querySelector(".content>details.project-settings");if(section){section.open=true;section.classList.add("workspace-drawer")}}}>Share / Settings</button>
         <button onClick={()=>setChatVisible(v=>!v)}>Chat</button>
         <button onClick={e=>{const tools=e.currentTarget.closest(".ide").querySelector(".worktools");tools.open=!tools.open}}>Output</button>
       </div>

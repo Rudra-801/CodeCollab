@@ -8,7 +8,7 @@ export function configurations(env) {
   return Object.keys(endpoints).flatMap(provider => {
     const prefix = provider.toUpperCase();
     const models = (env[prefix + "_MODELS"] || env[prefix + "_MODEL"] || "").split(",").map(x=>x.trim()).filter(Boolean);
-    return env[prefix + "_API_KEY"] && models.length ? [{provider, models}] : [];
+    return env[prefix + "_API_KEY"] ? [{provider, models}] : [];
   });
 }
 export async function catalog(env, signal, fetcher=fetch) {
@@ -19,9 +19,9 @@ export async function catalog(env, signal, fetcher=fetch) {
       const response=await fetcher(endpoints[item.provider]+"/models",{headers,signal});
       if(!response.ok)continue;
       const body=await response.json();
-      const available=item.provider==="gemini"?(body.models||[]).filter(m=>m.supportedGenerationMethods?.includes("generateContent")).map(m=>m.name.replace(/^models\//,"")):
-        (body.data||[]).filter(m=>item.provider!=="openrouter" || (m.pricing?.prompt==="0"&&m.pricing?.completion==="0")).map(m=>m.id);
-      const models=item.models.filter(m=>available.includes(m));
+      const available=item.provider==="gemini"?(body.models||[]).filter(m=>m.supportedGenerationMethods?.includes("generateContent")&&!/(image|audio|tts|computer-use)/i.test(m.name)).map(m=>m.name.replace(/^models\//,"")):
+        (body.data||[]).filter(m=>!/(whisper|tts|speech|guard)/i.test(m.id) && (item.provider!=="openrouter" || (m.pricing?.prompt==="0"&&m.pricing?.completion==="0"))).map(m=>m.id);
+      const models=item.models.length?item.models.filter(m=>available.includes(m)):available.slice(0,30);
       if(models.length)result.push({...item,models});
     }catch(error){if(signal?.aborted)throw error;}
   }

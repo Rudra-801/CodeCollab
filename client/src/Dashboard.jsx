@@ -517,7 +517,7 @@ export default function Dashboard({ user, logout }) {
                   writable={role !== "viewer" && !resource.archived}
                 /></details>
               )}
-              <details>
+              <details className="project-settings" onToggle={event=>{if(!event.currentTarget.open)event.currentTarget.classList.remove("workspace-drawer")}}>
                 <summary>Members and workspace settings</summary>
                 {role === "owner" && (
                   <button

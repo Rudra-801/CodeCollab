@@ -1,14 +1,14 @@
 # Free backend gateway
 
-This package prepares a Cloudflare Workers Free deployment with SQLite Durable Objects. No billing, paid resource or provider account was created. Wrangler dry-run bundles the Worker successfully. The local CLI is not authenticated to Cloudflare, so no public gateway URL exists yet.
+This package prepares a Cloudflare Workers Free deployment with SQLite Durable Objects. No billing, paid resource or provider account was created. Wrangler dry-run bundles the Worker successfully. The Worker is now deployed at https://codecollab-ai.codecollab-rudra-801.workers.dev. The health endpoint is /health. Provider keys are still required for real AI requests.
 
 ## Owner setup
 
 1. Sign in to a Cloudflare account on the Workers Free plan with `npx wrangler@4.158.0 login`. Keep the account on Free. Stop if an upgrade or payment method is requested.
 2. In gateway/wrangler.toml, add the public Firebase web API key as FIREBASE_WEB_API_KEY under [vars]. This is public Firebase configuration, not an Admin credential. No service-account key is required.
-3. Configure current text model IDs as comma-separated GROQ_MODELS, OPENROUTER_MODELS and GEMINI_MODELS under [vars]. IDs are checked against the live official catalogs at request time. Removed models are excluded. OpenRouter models with nonzero prompt or completion pricing are excluded. Use only each provider's free account allocation and do not enable paid account upgrades.
+3. Configure current text model IDs as comma-separated GROQ_MODELS, OPENROUTER_MODELS and GEMINI_MODELS under [vars]. Model lists are optional. When omitted, current compatible models are discovered from the provider catalog. IDs are checked against the live official catalogs at request time. Removed models are excluded. OpenRouter models with nonzero prompt or completion pricing are excluded. Use only each provider's free account allocation and do not enable paid account upgrades.
 4. Store provider keys with `npx wrangler@4.158.0 secret put GROQ_API_KEY --config gateway/wrangler.toml`, then repeat for OPENROUTER_API_KEY and GEMINI_API_KEY. At least one provider is required for AI. Never paste keys into client variables, this repository, Firebase documents or chat.
-5. Review limits and deploy with `npx wrangler@4.158.0 deploy --config gateway/wrangler.toml`. This creates the two configured SQLite Durable Object namespaces on the Free plan. No deployment has been performed by this release.
+5. Review limits and deploy with `npx wrangler@4.158.0 deploy --config gateway/wrangler.toml`. This creates the two configured SQLite Durable Object namespaces on the Free plan. The existing deployment uses this configuration.
 6. Set VITE_AI_GATEWAY_URL to the resulting HTTPS Worker URL and VITE_PRESENCE_URL to its WSS /presence endpoint, then rebuild and deploy the frontend. Keep the URLs unset until real provider and two-account tests pass. ALLOWED_ORIGINS must include only the intended frontend origins.
 
 AI_FALLBACK_ORDER defaults to groq,openrouter,gemini and can be changed in [vars]. Manual provider selection disables fallback. AI conversation history remains in the current browser session under the authenticated user's project key. Selected code/current-file context is sent only when the user submits it. Code edits require diff review and explicit approval, reject stale documents and read-only editors, and use Monaco undo. The system instruction is a mitigation for prompt injection, not an isolation boundary.
