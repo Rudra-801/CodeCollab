@@ -600,7 +600,7 @@ export default function Dashboard({ user, logout }) {
                     {m.uid} · {m.role}{" "}
                     {role === "owner" && m.uid !== user.uid && (
                       <>
-                        <select
+                        <select aria-label={"Role for "+m.uid}
                           value={m.role}
                           onChange={(e) =>
                             run(() =>

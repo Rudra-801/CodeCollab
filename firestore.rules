@@ -19,6 +19,37 @@ service cloud.firestore {
     && get(invite).data.usedBy=='' && get(invite).data.expiresAt>request.time
     && getAfter(invite).data.usedBy==uid && getAfter(invite).data.redeemedAt==request.time;
   }
+
+  function projectOwner(p) { return request.auth!=null && get(/databases/$(database)/documents/projects/$(p)).data.owner==request.auth.uid; }
+  function removalAudit(p,uid) {
+   let member = get(/databases/$(database)/documents/projects/$(p)/members/$(uid));
+   return getAfter(/databases/$(database)/documents/projects/$(p)/activity/$('removed_'+uid+'_'+member.data.get('invitation','legacy'))).data=={'action':'remove','uid':request.auth.uid,'target':uid,'createdAt':request.time};
+  }
+  match /projects/{p}/members/{uid} {
+   allow update: if projectOwner(p) && resource.data.role!='owner'
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role','audit'])
+    && request.resource.data.role in ['admin','editor','viewer']
+    && getAfter(/databases/$(database)/documents/projects/$(p)/activity/$(request.resource.data.audit)).data=={'action':'role','uid':request.auth.uid,'target':uid,'role':request.resource.data.role,'createdAt':request.time}
+    && getAfter(/databases/$(database)/documents/users/$(uid)/projects/$(p)).data.role==request.resource.data.role;
+   allow delete: if projectOwner(p) && resource.data.role!='owner'
+    && !existsAfter(/databases/$(database)/documents/users/$(uid)/projects/$(p)) && removalAudit(p,uid);
+  }
+  match /users/{uid}/projects/{p} {
+   allow update: if projectOwner(p) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+    && getAfter(/databases/$(database)/documents/projects/$(p)/members/$(uid)).data.role==request.resource.data.role;
+   allow delete: if projectOwner(p) && !existsAfter(/databases/$(database)/documents/projects/$(p)/members/$(uid)) && removalAudit(p,uid);
+  }
+  match /projects/{p}/activity/{event} {
+   allow create: if projectOwner(p) && request.resource.data.uid==request.auth.uid && request.resource.data.createdAt==request.time
+    && (request.resource.data.action=='role' && request.resource.data.keys().hasOnly(['action','uid','target','role','createdAt'])
+     && getAfter(/databases/$(database)/documents/projects/$(p)/members/$(request.resource.data.target)).data.audit==event)
+     || (projectOwner(p) && request.resource.data.action=='remove'
+      && request.resource.data.keys().hasOnly(['action','uid','target','createdAt'])
+      && request.resource.data.uid==request.auth.uid && request.resource.data.createdAt==request.time
+      && exists(/databases/$(database)/documents/projects/$(p)/members/$(request.resource.data.target))
+      && !existsAfter(/databases/$(database)/documents/projects/$(p)/members/$(request.resource.data.target))
+      && event=='removed_'+request.resource.data.target+'_'+get(/databases/$(database)/documents/projects/$(p)/members/$(request.resource.data.target)).data.get('invitation','legacy'));
+  }
   match /projectInvitations/{token} {
    allow get: if request.auth != null;
    allow list: if false;

@@ -1,3 +1,4 @@
+import {changeProjectMember} from "../src/projectMembership.js";
 import {projectInvitation} from "../src/projectInvitations.js";
 import { createPersonalProject } from "../src/createPersonalProject.js";
 import assert from "node:assert/strict";
@@ -102,6 +103,12 @@ async function test() {
   await assert.rejects(projectInvitation(b.db,b.uid,{action:"join",code:revokedInvite.code}));
   await assert.rejects(setDoc(doc(a.db,"projectInvitations","forged-admin"),{project:personal.id,role:"admin",createdBy:a.uid,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+86400000),revoked:false,usedBy:""}));
   await assert.rejects(setDoc(doc(a.db,"projectInvitations","expired"),{project:personal.id,role:"viewer",createdBy:a.uid,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()-1000),revoked:false,usedBy:""}));
+  await changeProjectMember(a.db,a.uid,{action:"role",id:personal.id,target:c.uid,role:"viewer"});
+  assert.equal((await getDoc(doc(c.db,"projects",personal.id,"members",c.uid))).get("role"),"viewer");
+  await assert.rejects(changeProjectMember(c.db,c.uid,{action:"role",id:personal.id,target:a.uid,role:"viewer"}));
+  await changeProjectMember(a.db,a.uid,{action:"remove",id:personal.id,target:c.uid});
+  await assert.rejects(getDoc(doc(c.db,"projects",personal.id)));
+  console.log("PASS owner role changes, audit persistence and member revocation");
   console.log("PASS rules-enforced project invitations, replay rejection, revocation, expiry and role escalation denial");
   const files = await getDocs(collection(a.db, "projects", personal.id, "files"));
   assert.equal(files.size, 1);

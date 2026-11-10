@@ -1,3 +1,4 @@
+import {changeProjectMember} from "./projectMembership";
 import {projectInvitation} from "./projectInvitations";
 import { initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
@@ -41,6 +42,9 @@ const starters = {
  typescript:{name:"main.ts",source:'const name: string = readline() || "world";\nconsole.log("Hello, " + name + "!");'}
 };
 export const command = async (data) =>
+  (data.kind==="projects"&&["role","remove"].includes(data.action))
+    ? changeProjectMember(db,auth.currentUser.uid,data)
+    :
   ((data.kind==="projects"&&data.action==="invite")||(["join","revoke"].includes(data.action)&&data.code?.startsWith("ccp_")))
     ? projectInvitation(db,auth.currentUser.uid,data)
     : data.action === "create" && data.kind === "projects"

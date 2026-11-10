@@ -41,6 +41,9 @@ function Editor({ path, uid, name, writable, prefs }) {
       ready = false;
     const ydoc = new Y.Doc(),
       model = monaco.editor.createModel("", language);
+    // y-monaco indexes Y.Text in LF code units. Windows' default CRLF model
+    // adds an extra offset for each line and can desynchronize remote edits.
+    model.setEOL(monaco.editor.EndOfLineSequence.LF);
     const instance = monaco.editor.create(container.current, {
       model,
       automaticLayout: true,
@@ -98,6 +101,12 @@ function Editor({ path, uid, name, writable, prefs }) {
               "remote",
             );
         }
+        // Delete only CR characters in CRLF pairs. Concurrent normalization
+        // deletes the same CRDT items and preserves every code character.
+        const text=ydoc.getText("content").toString();
+        if(text.includes("\r\n"))ydoc.transact(()=>{
+          for(let i=text.length-2;i>=0;i--)if(text[i]==="\r"&&text[i+1]==="\n")ydoc.getText("content").delete(i,1);
+        },writable?"line-ending-normalization":"remote");
         if (!ready && !snap.metadata.fromCache) {
           ready = true;
           editor.current.ready = true;
