@@ -1,0 +1,5 @@
+CodeCollab
+Double-click START-CodeCollab.cmd in this folder. It builds the app from the current source. Open http://localhost:5000 in your browser. Restart the launcher after editing the source. Keep the terminal open while working. Node.js 22 or newer is required.
+
+Edit the current app in client/src. Landing.jsx is the home page, Playground.jsx is the guest playground, and IDE.jsx is the project editor. The launch command uses this folder's Firebase staging configuration.
+

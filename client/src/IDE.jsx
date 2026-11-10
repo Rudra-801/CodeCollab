@@ -104,9 +104,17 @@ function Editor({ path, uid, name, writable, prefs }) {
         // Delete only CR characters in CRLF pairs. Concurrent normalization
         // deletes the same CRDT items and preserves every code character.
         const text=ydoc.getText("content").toString();
-        if(text.includes("\r\n"))ydoc.transact(()=>{
-          for(let i=text.length-2;i>=0;i--)if(text[i]==="\r"&&text[i+1]==="\n")ydoc.getText("content").delete(i,1);
-        },writable?"line-ending-normalization":"remote");
+        if(text.includes("\r\n")){
+          ydoc.transact(()=>{
+            for(let i=text.length-2;i>=0;i--)if(text[i]==="\r"&&text[i+1]==="\n")ydoc.getText("content").delete(i,1);
+          },writable?"line-ending-normalization":"remote");
+          // Repair only the local view after importing a legacy CRLF state.
+          // The mutex prevents this projection from becoming a CRDT text write.
+          binding.mux(()=>{
+            const normalized=ydoc.getText("content").toString();
+            if(model.getValue()!==normalized)model.setValue(normalized);
+          });
+        }
         if (!ready && !snap.metadata.fromCache) {
           ready = true;
           editor.current.ready = true;

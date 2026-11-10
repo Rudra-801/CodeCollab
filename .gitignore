@@ -17,3 +17,6 @@ desktop.ini
 **/.wrangler/
 
 client/dist-ai-qa/
+
+/qa/deployed/
+/qa/emulator/
